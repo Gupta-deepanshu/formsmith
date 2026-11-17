@@ -6,7 +6,7 @@ AI-assisted form builder (Typeform / Google Forms style). Owners describe a form
 
 Full plan: `docs/PLAN.md`. Decision log: `docs/decisions.md` (add an entry for every non-obvious choice).
 
-Status (2026-11-17): all phases built; type-check, lint, 75 unit tests and production build pass. Migrations are written but NOT yet pushed (waiting on the user to link the project and add .env.local); end-to-end flows against Supabase/Gemini are untested until then.
+Status (2026-11-17): all phases built; 4 migrations pushed to the linked project; type-check, lint, 75 unit tests, production build, `pnpm check:rls` (69 checks) and a local end-to-end run (auth, publish, resume, submit, AI) pass. Open: AI generate latency (~4 min observed) vs the 60s route limit; Google sign-in not yet tried in a browser.
 
 ## Stack (verify APIs against current docs / installed types, not memory)
 
@@ -78,4 +78,5 @@ Everything else goes straight to Supabase from the client/server components unde
 - Supabase CLI v3 targets LOCAL by default, so always pass `--remote` for the linked project.
 - `pnpm supabase migration new <name>` creates a migration. `pnpm supabase db push --remote --dry-run` previews; `pnpm supabase db push --remote` applies (**tell the user before every push**).
 - `pnpm db:types` regenerates `src/lib/supabase/database.types.ts` from the linked project.
+- `pnpm check:rls` runs the access-rule checks (`scripts/check-rls.mjs`) against the linked project with temporary users it cleans up. Run it after every migration push.
 - Kept the TypeScript 5.9 / ESLint 9 versions that create-next-app pins (Next tests against these; TS 7 and ESLint 10 not adopted yet).

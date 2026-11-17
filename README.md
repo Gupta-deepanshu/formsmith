@@ -33,6 +33,7 @@ See `docs/PLAN.md` for the full design and `docs/decisions.md` for the reasoning
 3. In Supabase, enable Google and anonymous sign-ins, then add `http://localhost:3000/auth/callback` (and your production URL) to the auth redirect URLs.
 4. `pnpm supabase login`, then `pnpm supabase link --project-ref <ref>`, then `pnpm supabase db push --remote`.
 5. Optionally run `pnpm db:types` to regenerate database types from the linked project.
+6. Run `pnpm check:rls` after every migration: it exercises RLS, column grants and the SQL functions as real temporary users on the linked project, then deletes them.
 6. `pnpm dev`
 
 ## Scripts
