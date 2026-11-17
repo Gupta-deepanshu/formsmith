@@ -13,3 +13,4 @@ export * from "./patch/ops";
 export * from "./patch/compound";
 export * from "./patch/history";
 export * from "./templates";
+export * from "./answers";
