@@ -180,7 +180,7 @@ forms(id uuid pk, owner_id uuid null references auth.users on delete cascade, sl
       title text, draft_schema jsonb not null, published_version_id uuid null, is_demo bool default false,
       created_at, updated_at)                       -- owner_id null only when is_demo
 form_versions(id uuid pk, form_id uuid fk cascade, version int, schema jsonb, published_at, unique(form_id, version))
-responses(id uuid pk, form_id uuid fk, version_id uuid fk, respondent_id uuid default auth.uid(),
+responses(id uuid pk, form_id uuid fk, version_id uuid fk, respondent_id uuid null default auth.uid() on delete set null,
           status text check (status in ('draft','submitted')) default 'draft', answers jsonb default '{}',
           last_step_id text, furthest_step_index int default 0,
           resume_token_hash bytea unique null, resume_token_expires_at timestamptz null,   -- never readable by clients (column grants)
@@ -212,7 +212,7 @@ SQL functions (small, auditable, and they keep "no custom backend" honest):
 Submit sets `status='submitted', submitted_at=now()` using the **secret key** in the route handler, after validation. That is the only path to "submitted", and it's why the column grants exclude `status`.
 
 ### 5a. Where the secret key is used, and why RLS alone isn't enough there
-- **Used in exactly one place:** `src/lib/supabase/admin.ts` (starts with `import "server-only"`), imported only by `src/app/api/responses/[id]/submit/route.ts`. The env var is `SUPABASE_SECRET_KEY`, never `NEXT_PUBLIC_`-prefixed, so Next won't inline it into client bundles. `server-only` turns any accidental client import into a build error. `src/lib/env.ts` keeps it in a separate server-only module.
+- **Used in exactly one place:** `src/lib/supabase/admin.ts` (starts with `import "server-only"`), imported only by `src/app/api/responses/[id]/submit/route.ts`, where it reads the response's version schema (respondents can't read `form_versions`) and performs the status transition. The env var is `SUPABASE_SECRET_KEY`, never `NEXT_PUBLIC_`-prefixed, so Next won't inline it into client bundles. `server-only` turns any accidental client import into a build error. `src/lib/env.ts` keeps it in a separate server-only module.
 - **Why RLS isn't enough for submit:** RLS can answer "is this your row?" but not "do these answers satisfy this form's rules?". That needs the shared TypeScript validator (visibility rules, per-type checks), which can't run inside a Postgres policy. If respondents could write `status` themselves, anyone could mark an invalid or half-filled response as submitted straight through the REST API, skipping our validation. So `status`/`submitted_at` are not grantable to clients at all. The only writer is a trusted server that has just run the validator, and that writer needs a role that bypasses the column grant, which is what the secret key is for.
 - **Not used anywhere else.** The AI quota, publishing, the public form lookup, resume claims and demo aggregates are all `security definer` SQL functions called with the user's own session. Those functions are narrow, do their own checks, and need no key in the app.
 
