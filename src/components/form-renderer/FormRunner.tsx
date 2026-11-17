@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useForm, useFormState, useWatch, type Resolver } from "react-hook-form";
 import { Button, Card, Icon, ProgressBar } from "@/components/ui";
 import {
@@ -136,20 +136,37 @@ export function FormRunner(props: FormRunnerProps) {
     if (typeof m === "string") stepErrors[f.id] = m;
   }
 
-  // Report answer changes (autosave). Subscribes outside React rendering: no re-renders.
+  // Report answer/progress changes (autosave).
+  //  - The latest onProgress lives in a ref, so a parent passing a new function each render
+  //    doesn't re-run these effects. (It did: each save re-rendered the parent, which
+  //    re-reported, which saved again: a "Saving… Saved" loop with no typing.)
+  //  - Only real changes are reported, so opening the form never saves anything.
   const progressRef = useRef<Progress>({ stepId, furthestIndex: furthest });
+  const onProgressRef = useRef(onProgress);
+  useEffect(() => {
+    onProgressRef.current = onProgress;
+  });
+  const lastReported = useRef<string | null>(null);
+  const report = useCallback((values: Answers) => {
+    const key = JSON.stringify([values, progressRef.current]);
+    if (key === lastReported.current) return;
+    lastReported.current = key;
+    onProgressRef.current?.(values, progressRef.current);
+  }, []);
   useEffect(() => {
     progressRef.current = { stepId, furthestIndex: furthest };
-    if (!firstRender.current) onProgress?.(getValues(), progressRef.current);
-  }, [stepId, furthest, onProgress, getValues]);
-  useEffect(() => {
-    if (!onProgress) return;
+    if (firstRender.current) {
+      // Baseline: the initial (or restored) state isn't a change.
+      lastReported.current = JSON.stringify([getValues(), progressRef.current]);
+      return;
+    }
+    report(getValues());
+  }, [stepId, furthest, getValues, report]);
+  useEffect(
     // subscribe() listens to value changes without re-rendering this component.
-    return subscribe({
-      formState: { values: true },
-      callback: ({ values }) => onProgress(values, progressRef.current),
-    });
-  }, [subscribe, onProgress]);
+    () => subscribe({ formState: { values: true }, callback: ({ values }) => report(values) }),
+    [subscribe, report],
+  );
 
   // Move focus to the step heading on step change (not on first load: don't steal focus).
   useEffect(() => {
