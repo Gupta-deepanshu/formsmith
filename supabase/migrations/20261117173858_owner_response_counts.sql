@@ -5,14 +5,14 @@
 -- unreadable). Granting table-level SELECT would expose the hash; this function doesn't.
 --
 -- SECURITY INVOKER (the default, stated explicitly): it runs as the caller, so RLS and the
--- column grants still apply. It reads only form_id and status, both granted columns.
+-- column grants still apply. It reads only id, form_id and status, all granted columns.
 create or replace function public.my_form_response_counts()
 returns table (form_id uuid, submitted bigint)
 language sql stable
 security invoker
 set search_path = ''
 as $$
-  select r.form_id, count(*)
+  select r.form_id, count(r.id)  -- an explicitly granted column, not count(*)
   from public.responses r
   where r.status = 'submitted'
     and private.owns_form(r.form_id)  -- owner's forms only, not forms they responded to
