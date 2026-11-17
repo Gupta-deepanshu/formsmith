@@ -4,7 +4,12 @@ import { FormDefinitionSchema, normalize } from "@/core";
 import { applyAiEdit } from "@/core/ai/edit";
 import { AI_LIMITS, AiEditSchema } from "@/core/ai/schemas";
 import { createClient } from "@/lib/supabase/server";
-import { describeAiError, isAiConfigured, withModelFallback } from "@/server/ai/provider";
+import {
+  AI_TIMEOUTS,
+  describeAiError,
+  isAiConfigured,
+  withModelFallback,
+} from "@/server/ai/provider";
 import { EDIT_SYSTEM, editPrompt } from "@/server/ai/prompts";
 import { consumeQuota, finishRequest, quotaResponse } from "@/server/ai/quota";
 
@@ -62,18 +67,22 @@ export async function POST(request: Request) {
   const startedAt = Date.now();
   let modelId = "unknown";
   try {
-    const { value, modelId: used } = await withModelFallback(async (choice) => {
-      modelId = choice.id;
-      const r = await generateText({
-        model: choice.model,
-        system: EDIT_SYSTEM,
-        prompt: editPrompt(body.data.instruction, body.data.form),
-        output: Output.object({ schema: AiEditSchema }),
-        maxRetries: 1,
-        abortSignal: request.signal,
-      });
-      return r.output;
-    });
+    const { value, modelId: used } = await withModelFallback(
+      async (choice, signal) => {
+        modelId = choice.id;
+        const r = await generateText({
+          model: choice.model,
+          system: EDIT_SYSTEM,
+          prompt: editPrompt(body.data.instruction, body.data.form),
+          output: Output.object({ schema: AiEditSchema }),
+          // With a fallback available, switching models beats the SDK's backoff retries.
+          maxRetries: choice.isLast ? 1 : 0,
+          abortSignal: signal,
+        });
+        return r.output;
+      },
+      { signal: request.signal, attemptMs: AI_TIMEOUTS.editAttemptMs },
+    );
     modelId = used;
 
     const outcome = applyAiEdit(normalize(body.data.form), value.ops);

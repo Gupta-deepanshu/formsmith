@@ -33,7 +33,13 @@ Short, defensible reasons for the non-obvious choices. Newest last.
 ## AI
 
 - **Flat, loose AI schema + deterministic repair.** Gemini's structured output accepts only a JSON Schema subset and rejects large unions, so the model fills a simple shape (option labels, string values). `repairForm`/`applyAiEdit` turn it into strict data. Repair is deterministic, so streamed partial forms keep stable ids and React keys.
-- **Generate streams raw JSON text built by hand** (not `toTextStreamResponse`), so a rate-limit error from the primary model _before any bytes are sent_ can switch to `AI_FALLBACK_MODEL` invisibly.
+- **Generate streams raw JSON text built by hand** (not `toTextStreamResponse`), so a failure of the primary model _before any bytes are sent_ can switch to `AI_FALLBACK_MODEL` invisibly.
+- **Fail fast to the fallback model, don't wait.** Measured on 2026-11-17: the free-tier primary (gemini-3.8-flash) often answered "high demand" (503), sometimes only after holding the request for ~4 minutes, while gemini-3.5-flash-lite answered in 2–3 s. So:
+  - each attempt has a budget: generate drops a model with no first byte in 15 s or a 15 s stall; edit allows 20 s per model; 55 s in total, inside the 60 s `maxDuration`;
+  - 429, 5xx/overload (including `StreamProviderError` inside an open stream) and our own timeouts switch models; bad requests don't;
+  - the SDK's own retries are off when a fallback exists (its backoff was part of the long waits);
+  - after a primary failure, the fallback goes first for 2 minutes (in-memory per instance; it only changes the order models are tried).
+  - Not changed: the thinking level. `minimal` isn't supported by the primary, and `low` couldn't be measured while the primary was overloaded.
 - **Prompt injection:** instructions live only in the system prompt; user text is fenced as data with closing tags stripped. Output is schema-constrained and re-validated, there are no tools, and results render as plain text.
 - **Quota in Postgres** (`consume_ai_quota`, advisory lock): durable across serverless instances. Owners 20/h and 60/day; anonymous sandbox users 3 total; 400/day globally to protect the free tier.
 - **Never sends respondent answers to the AI**; logs only ids/latency/model/validity.

@@ -6,7 +6,7 @@ AI-assisted form builder (Typeform / Google Forms style). Owners describe a form
 
 Full plan: `docs/PLAN.md`. Decision log: `docs/decisions.md` (add an entry for every non-obvious choice).
 
-Status (2026-11-17): all phases built; 4 migrations pushed to the linked project; type-check, lint, 75 unit tests, production build, `pnpm check:rls` (69 checks) and a local end-to-end run (auth, publish, resume, submit, AI) pass. Open: AI generate latency (~4 min observed) vs the 60s route limit; Google sign-in not yet tried in a browser.
+Status (2026-11-17): all phases built; 4 migrations pushed to the linked project; type-check, lint, 75 unit tests, production build, `pnpm check:rls` (69 checks) and a local end-to-end run (auth, publish, resume, submit, AI) pass. AI fails fast to the fallback model (generate ~7 s while the primary was overloaded). Open: Google sign-in and UI not yet tried in a browser.
 
 ## Stack (verify APIs against current docs / installed types, not memory)
 
@@ -34,7 +34,7 @@ Status (2026-11-17): all phases built; 4 migrations pushed to the linked project
 
 **Secret key (`SUPABASE_SECRET_KEY`)**: used ONLY in `src/lib/supabase/admin.ts` (`import "server-only"`), imported ONLY by the submit handler, which uses it to (1) read the response's version schema (respondents can't read form_versions) and (2) set status=submitted after validation. Why RLS isn't enough there: a policy can check row ownership but can't run the TypeScript validator, so `status`/`submitted_at` aren't grantable to clients, and only a trusted server that has just validated may set them. Everything else uses the user's session plus narrow `security definer` SQL functions. Never `NEXT_PUBLIC_`-prefix it. Any new use needs a stated reason.
 
-AI model: `AI_MODEL` (gemini-3.8-flash) with optional `AI_FALLBACK_MODEL` (gemini-3.5-flash-lite), retried once on a rate-limit error before any bytes have streamed.
+AI model: `AI_MODEL` (gemini-3.8-flash) with optional `AI_FALLBACK_MODEL` (gemini-3.5-flash-lite). Fail fast: per-attempt time budgets (`AI_TIMEOUTS` in provider.ts), switch models on 429/5xx/overload/timeout before any bytes stream, 2-minute fallback-first cooldown after a primary failure. Keep every route under its 60 s `maxDuration`.
 
 **Sandbox editor `/try`**: the same editor with a localStorage `DraftPersistence` adapter, publish preview only (no DB writes; RLS bars anonymous users from `forms`), and an anonymous session for AI (3 calls total).
 Everything else goes straight to Supabase from the client/server components under RLS, plus a few SQL functions (publish, public form lookup, resume claim, AI quota).
