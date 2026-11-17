@@ -204,6 +204,10 @@ export type Database = {
       }
       get_demo_responses: { Args: never; Returns: Json }
       issue_resume_token: { Args: { p_response_id: string }; Returns: string }
+      my_form_response_counts: {
+        Args: never
+        Returns: { form_id: string; submitted: number }[]
+      }
       open_public_form: { Args: { p_slug: string }; Returns: Json }
       publish_form: { Args: { p_form_id: string }; Returns: Json }
       unpublish_form: { Args: { p_form_id: string }; Returns: undefined }

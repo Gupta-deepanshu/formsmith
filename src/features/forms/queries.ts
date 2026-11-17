@@ -22,20 +22,25 @@ type Row = {
   updated_at: string;
   published_version_id: string | null;
   published: { version: number; published_at: string } | null;
-  responses: { count: number }[];
 };
 
 export async function listMyForms(): Promise<FormSummary[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("forms")
-    .select(
-      "id, slug, title, updated_at, published_version_id, published:form_versions!forms_published_version_fk(version, published_at), responses(count)",
-    )
-    .eq("responses.status", "submitted")
-    .order("updated_at", { ascending: false });
-  if (error) throw new Error("Couldn't load your forms");
-  return (data as unknown as Row[]).map((r) => ({
+  // Counts come from a SECURITY INVOKER function, not an embedded `responses(count)`:
+  // PostgREST aggregates need table-level SELECT on responses, which clients deliberately
+  // don't have (column grants keep resume_token_hash unreadable). Both run in parallel.
+  const [forms, counts] = await Promise.all([
+    supabase
+      .from("forms")
+      .select(
+        "id, slug, title, updated_at, published_version_id, published:form_versions!forms_published_version_fk(version, published_at)",
+      )
+      .order("updated_at", { ascending: false }),
+    supabase.rpc("my_form_response_counts"),
+  ]);
+  if (forms.error || counts.error) throw new Error("Couldn't load your forms");
+  const countByForm = new Map(counts.data.map((c) => [c.form_id, Number(c.submitted)]));
+  return (forms.data as unknown as Row[]).map((r) => ({
     id: r.id,
     slug: r.slug,
     title: r.title,
@@ -45,7 +50,7 @@ export async function listMyForms(): Promise<FormSummary[]> {
       !!r.published &&
       new Date(r.updated_at).getTime() - new Date(r.published.published_at).getTime() > 2000,
     publishedVersion: r.published?.version ?? null,
-    responseCount: r.responses[0]?.count ?? 0,
+    responseCount: countByForm.get(r.id) ?? 0,
     updatedAt: r.updated_at,
   }));
 }
