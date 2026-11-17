@@ -48,6 +48,7 @@ Short, defensible reasons for the non-obvious choices. Newest last.
 
 - **Cache Components (Next 16 default).** Session/param reads live inside `<Suspense>`, so page shells prerender (◐ in the build output). The public demo stats are `"use cache"` + `cacheLife("minutes")` with a cookie-less client.
   - Trade-off: `notFound()` inside a streamed boundary renders the 404 UI with a 200 status (headers are already sent). Acceptable for `noindex` public form pages.
+- **`connection()` before every session read** (`lib/supabase/server.ts`). With partial prefetching, `cookies()` also resolves while Next prerenders the App Shell; Supabase then calls `Date.now()` for its token-expiry check, which Cache Components rejects ("unstable value while prerendering"). It surfaced only in `next dev`, only when signed in, as an error overlay right after Google sign-in. `connection()` makes session-dependent UI request-time; it stays behind Suspense, so static shells are unchanged.
 - **Theme without cookies.** An inline script sets `.dark` before paint from localStorage/OS preference. Reading a cookie in the root layout would make every page dynamic.
 - **Editor store per instance via context** (App Router guidance), so the sandbox and owner editors never share state.
 - **Persistence adapter.** The editor depends on `DraftPersistence { save }`; Supabase and localStorage implementations make the no-sign-in sandbox the _same_ editor.

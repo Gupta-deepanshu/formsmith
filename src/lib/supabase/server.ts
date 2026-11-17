@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { publicEnv } from "@/lib/env";
 import type { Database } from "./database.types";
 
@@ -12,6 +13,11 @@ import type { Database } from "./database.types";
  * <Suspense> boundary.
  */
 export async function createClient() {
+  // Session reads are per request. With partial prefetching, cookies() alone also resolves
+  // while Next prerenders the App Shell, and Supabase then calls Date.now() (token-expiry
+  // check), which Cache Components rejects as an unstable value during a prerender.
+  // connection() defers everything after it to request time.
+  await connection();
   const cookieStore = await cookies();
   return createServerClient<Database>(publicEnv.supabaseUrl, publicEnv.supabasePublishableKey, {
     cookies: {
