@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { HBarChart, StatTile } from "@/components/charts/HBarChart";
 import { buttonClasses, EmptyState, Icon, Select, Tabs } from "@/components/ui";
 import { choiceSummaries, completionRate, funnel, mergedFields, type FormDefinition, type ResponseRecord } from "@/core";
@@ -16,6 +16,9 @@ export function ResponsesDashboard({ title, formId, slug, isPublished, versions,
   const [tab, setTab] = useState<"summary" | "table">("summary");
 
   const byId = useMemo(() => new Map(versions.map((v) => [v.id, v])), [versions]);
+  // Stable callbacks so the memoised analytics below don't recompute on every render.
+  const formFor = useCallback((vid: string) => byId.get(vid)?.form, [byId]);
+  const versionLabel = useCallback((vid: string) => `v${byId.get(vid)?.version ?? "?"}`, [byId]);
   const scoped = useMemo(() => (versionId === "all" ? responses : responses.filter((r) => r.versionId === versionId)), [responses, versionId]);
   const base = versionId === "all" ? versions[0]?.form : byId.get(versionId)?.form;
   const fields = useMemo(() => (versionId === "all" ? mergedFields(versions.map((v) => v.form)) : (base?.steps.flatMap((s) => s.fields) ?? [])), [versionId, versions, base]);
@@ -69,8 +72,8 @@ export function ResponsesDashboard({ title, formId, slug, isPublished, versions,
         value={tab}
         onChange={setTab}
         items={[
-          { key: "summary", label: "Summary", panel: <Summary base={base} fields={fields} responses={scoped} formFor={(id) => byId.get(id)?.form} /> },
-          { key: "table", label: `Responses (${scoped.length.toLocaleString("en")})`, panel: <ResponsesTable fields={fields} responses={scoped} formFor={(id) => byId.get(id)?.form} versionLabel={(id) => `v${byId.get(id)?.version ?? "?"}`} fileName={slug} /> },
+          { key: "summary", label: "Summary", panel: <Summary base={base} fields={fields} responses={scoped} formFor={formFor} /> },
+          { key: "table", label: `Responses (${scoped.length.toLocaleString("en")})`, panel: <ResponsesTable fields={fields} responses={scoped} formFor={formFor} versionLabel={versionLabel} fileName={slug} /> },
         ]}
       />
     </>
