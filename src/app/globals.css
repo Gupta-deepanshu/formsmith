@@ -1,26 +1,150 @@
 @import "tailwindcss";
 
+/* Dark mode is class-driven (.dark on <html>), set before paint by the inline theme script. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens. Neutral greys + one accent. Components use the semantic names
+ * (bg-surface, text-fg-muted, border-line...) and never raw palette colours, so
+ * a theme is just a different set of variable values.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --canvas: oklch(0.985 0.002 260);
+  --surface: oklch(1 0 0);
+  --subtle: oklch(0.965 0.004 260);
+  --line: oklch(0.91 0.006 260);
+  --line-strong: oklch(0.82 0.01 260);
+  --fg: oklch(0.22 0.015 260);
+  --fg-muted: oklch(0.48 0.015 260);
+  --accent: oklch(0.52 0.19 268);
+  --accent-strong: oklch(0.45 0.2 268);
+  --on-accent: oklch(0.99 0 0);
+  --accent-soft: oklch(0.95 0.035 268);
+  --danger: oklch(0.55 0.2 25);
+  --danger-soft: oklch(0.96 0.03 25);
+  --success: oklch(0.52 0.13 150);
+  --success-soft: oklch(0.96 0.04 150);
+  --warning: oklch(0.6 0.13 75);
+  --warning-soft: oklch(0.97 0.05 85);
+  --shadow: 0 1px 2px oklch(0.2 0.02 260 / 0.06), 0 2px 8px oklch(0.2 0.02 260 / 0.05);
+  color-scheme: light;
+}
+
+.dark {
+  --canvas: oklch(0.17 0.01 260);
+  --surface: oklch(0.21 0.012 260);
+  --subtle: oklch(0.25 0.012 260);
+  --line: oklch(0.3 0.012 260);
+  --line-strong: oklch(0.4 0.014 260);
+  --fg: oklch(0.94 0.005 260);
+  --fg-muted: oklch(0.7 0.012 260);
+  --accent: oklch(0.7 0.15 268);
+  --accent-strong: oklch(0.78 0.12 268);
+  --on-accent: oklch(0.18 0.02 268);
+  --accent-soft: oklch(0.3 0.06 268);
+  --danger: oklch(0.72 0.16 25);
+  --danger-soft: oklch(0.3 0.06 25);
+  --success: oklch(0.74 0.13 150);
+  --success-soft: oklch(0.29 0.05 150);
+  --warning: oklch(0.8 0.12 80);
+  --warning-soft: oklch(0.3 0.05 80);
+  --shadow: 0 1px 2px oklch(0 0 0 / 0.4), 0 2px 8px oklch(0 0 0 / 0.3);
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --shadow-card: var(--shadow);
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    background: var(--canvas);
+    color: var(--fg);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    font-family: var(--font-sans);
+    background: var(--canvas);
+  }
+  /* One visible, consistent focus style for everything keyboard-focusable. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  dialog::backdrop {
+    background: oklch(0.15 0.02 260 / 0.45);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Motion: small, fast, opacity/transform only. */
+@keyframes fs-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes fs-enter-back {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes fs-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fs-highlight {
+  from {
+    box-shadow: 0 0 0 3px var(--accent);
+    background-color: var(--accent-soft);
+  }
+}
+@utility animate-enter {
+  animation: fs-enter 160ms ease-out both;
+}
+@utility animate-enter-back {
+  animation: fs-enter-back 160ms ease-out both;
+}
+@utility animate-fade {
+  animation: fs-fade 150ms ease-out both;
+}
+/* AI-changed fields: accent ring that fades out over a moment, so it reads as "this changed". */
+@utility animate-highlight {
+  animation: fs-highlight 1.8s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
