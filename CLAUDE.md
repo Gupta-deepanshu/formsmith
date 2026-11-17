@@ -8,7 +8,7 @@ Full plan: `docs/PLAN.md`. Decision log: `docs/decisions.md`.
 
 ## Stack (verify APIs against current docs / installed types, not memory)
 - Next.js 16 App Router, TypeScript strict, Tailwind v4 (`@tailwindcss/postcss`, `@theme` tokens, `@custom-variant dark`), pnpm, Vercel Hobby.
-- Next 16: session refresh lives in `src/proxy.ts` (exported `proxy`), not `middleware.ts`. Cache Components is on: auth/user-specific pages must be dynamic.
+- Next 16: session refresh lives in `src/proxy.ts` (exported `proxy`), not `middleware.ts`. Cache Components is on: reading `cookies()` (any Supabase session read) outside a `<Suspense>` boundary is a build error. Push session reads into components inside Suspense, not layout top level. Bundled docs: `node_modules/next/dist/docs/` (read them before using Next APIs).
 - Supabase via `@supabase/ssr` (`createBrowserClient` / `createServerClient` with cookies `getAll`/`setAll`). Env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, server-only `SUPABASE_SECRET_KEY`. Server auth checks use `getClaims()`, never `getSession()`.
 - Owners: Google sign-in. Respondents: `signInAnonymously()` (role `authenticated`, JWT claim `is_anonymous = true`).
 - AI: Vercel AI SDK v7 + `@ai-sdk/google`. Streaming: `streamText({ output: Output.object({ schema }) })`; client `useObject` from `@ai-sdk/react`. Non-streamed: `generateText` + `Output.object`, read `result.output`. Only `src/server/ai/provider.ts` knows the provider; model id from env `AI_MODEL`.
@@ -65,5 +65,7 @@ RLS is ON for every table. Owners read and write only their own forms and versio
 
 ## Commands
 - `pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint` / `pnpm test`
-- `pnpm supabase migration new <name>` creates a migration. `pnpm supabase db push` applies it to the linked remote project.
+- Supabase CLI v3 targets LOCAL by default, so always pass `--remote` for the linked project.
+- `pnpm supabase migration new <name>` creates a migration. `pnpm supabase db push --remote --dry-run` previews; `pnpm supabase db push --remote` applies (**tell the user before every push**).
 - `pnpm db:types` regenerates `src/lib/supabase/database.types.ts` from the linked project.
+- Kept the TypeScript 5.9 / ESLint 9 versions that create-next-app pins (Next tests against these; TS 7 and ESLint 10 not adopted yet).
