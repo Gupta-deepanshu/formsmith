@@ -14,3 +14,4 @@ export * from "./patch/compound";
 export * from "./patch/history";
 export * from "./templates";
 export * from "./answers";
+export * from "./analytics";
