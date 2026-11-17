@@ -53,6 +53,7 @@ export type FormForEdit = {
   draftSchema: Json;
   publishedVersion: number | null;
   publishedAt: string | null;
+  publishedSchema: Json | null;
   updatedAt: string;
 };
 
@@ -60,11 +61,11 @@ export async function getFormForEdit(id: string): Promise<FormForEdit | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("forms")
-    .select("id, slug, title, draft_schema, updated_at, published:form_versions!forms_published_version_fk(version, published_at)")
+    .select("id, slug, title, draft_schema, updated_at, published:form_versions!forms_published_version_fk(version, published_at, schema)")
     .eq("id", id)
     .maybeSingle();
   if (error || !data) return null;
-  const row = data as unknown as { id: string; slug: string; title: string; draft_schema: Json; updated_at: string; published: { version: number; published_at: string } | null };
+  const row = data as unknown as { id: string; slug: string; title: string; draft_schema: Json; updated_at: string; published: { version: number; published_at: string; schema: Json } | null };
   return {
     id: row.id,
     slug: row.slug,
@@ -72,6 +73,7 @@ export async function getFormForEdit(id: string): Promise<FormForEdit | null> {
     draftSchema: row.draft_schema,
     publishedVersion: row.published?.version ?? null,
     publishedAt: row.published?.published_at ?? null,
+    publishedSchema: row.published?.schema ?? null,
     updatedAt: row.updated_at,
   };
 }
