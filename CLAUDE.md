@@ -25,14 +25,22 @@ Full plan: `docs/PLAN.md`. Decision log: `docs/decisions.md`.
 ## Server pieces (only these three; all Route Handlers in `src/app/api/`)
 1. `POST /api/ai/generate` — description → streamed partial form; client validates/repairs on finish; fallback to starter template.
 2. `POST /api/ai/edit` — instruction + current form → `{ ops, summary }`, validated by core before being offered.
-3. `POST /api/responses/[id]/submit` — re-validates against the *published version* with the shared validator, then marks submitted (secret key, server only). Never trust the client.
+3. `POST /api/responses/[id]/submit` — re-validates against the *published version* with the shared validator, then marks submitted. Never trust the client.
+
+**Secret key (`SUPABASE_SECRET_KEY`)**: used ONLY in `src/lib/supabase/admin.ts` (`import "server-only"`), imported ONLY by the submit handler. Why RLS isn't enough there: a policy can check row ownership but can't run the TypeScript validator, so `status`/`submitted_at` aren't grantable to clients, and only a trusted server that has just validated may set them. Everything else uses the user's session plus narrow `security definer` SQL functions. Never `NEXT_PUBLIC_`-prefix it. Any new use needs a stated reason.
+
+AI model: `AI_MODEL` (gemini-3.8-flash) with optional `AI_FALLBACK_MODEL` (gemini-3.5-flash-lite), retried once on a rate-limit error before any bytes have streamed.
+
+**Sandbox editor `/try`**: the same editor with a localStorage `DraftPersistence` adapter, publish preview only (no DB writes; RLS bars anonymous users from `forms`), and an anonymous session for AI (3 calls total).
 Everything else goes straight to Supabase from the client/server components under RLS, plus a few SQL functions (publish, public form lookup, resume claim, AI quota).
 
 ## Data model (see `supabase/migrations`)
 - `forms`: id, owner_id, slug, title, draft_schema jsonb, published_version_id, is_demo, created_at, updated_at
 - `form_versions`: id, form_id, version, schema jsonb, published_at. Immutable (no update/delete).
-- `responses`: id, form_id (denormalised), version_id, respondent_id, status draft|submitted, answers jsonb, last_step_id, furthest_step_index, resume_token, started_at, updated_at, submitted_at
-- `ai_requests`: id, owner_id, kind generate|edit, latency_ms, valid, created_at
+- `responses`: id, form_id (denormalised), version_id, respondent_id, status draft|submitted, answers jsonb, last_step_id, furthest_step_index, resume_token_hash (sha256, never client-readable), resume_token_expires_at (30 days), started_at, updated_at, submitted_at
+- `ai_requests`: id, user_id, is_anonymous, kind generate|edit, model, latency_ms, valid, created_at
+- Resume tokens: 32 random bytes, plaintext returned once by `issue_resume_token`, only the hash stored. `claim_response(token)` moves the draft to the claiming session and clears the hash (single-device, single-use).
+- AI quota (`consume_ai_quota`, atomic): owners 20/hour and 60/day; anonymous sandbox users 3 in total.
 RLS is ON for every table. Owners read and write only their own forms and versions, and read responses to their own forms. Public form data is read only via `get_published_form(slug)`. Respondents insert and update only their own draft and can only change `answers`/`last_step_id`/`furthest_step_index` (column grants). Respondents can never set `status`; only the submit handler can. Non-anonymous users only can own forms.
 
 ## UI rules
