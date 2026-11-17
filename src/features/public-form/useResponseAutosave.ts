@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Answers } from "@/core";
 import type { Progress } from "@/components/form-renderer/FormRunner";
 import { createClient, ensureSession } from "@/lib/supabase/client";
-import type { Json } from "@/lib/supabase/database.types";
+import type { Json, TablesInsert } from "@/lib/supabase/database.types";
 
 /**
  * Respondent autosave.
@@ -75,7 +75,9 @@ export function useResponseAutosave({
           if (!responseId.current) {
             const { data, error } = await supabase
               .from("responses")
-              .insert({ version_id: versionId, ...row })
+              // form_id is filled by the responses_before_insert trigger (and isn't
+              // grantable), which generated types can't know.
+              .insert({ version_id: versionId, ...row } as TablesInsert<"responses">)
               .select("id")
               .single();
             if (error?.code === "23505") {

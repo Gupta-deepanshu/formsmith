@@ -51,8 +51,6 @@ type DemoPayload = {
   responses: {
     status: "draft" | "submitted";
     furthest_step_index: number;
-    started_at: string;
-    submitted_at: string | null;
     answers: Answers;
   }[];
 };
@@ -80,8 +78,9 @@ async function getDemoStats() {
     status: r.status,
     answers: r.answers,
     furthestStepIndex: r.furthest_step_index,
-    startedAt: r.started_at,
-    submittedAt: r.submitted_at,
+    // The demo RPC deliberately returns no timestamps; the summary doesn't need them.
+    startedAt: "",
+    submittedAt: r.status === "submitted" ? "" : null,
   }));
   return { form: loaded.form, responses };
 }

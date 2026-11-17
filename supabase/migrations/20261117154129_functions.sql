@@ -280,7 +280,8 @@ as $$
     where fld ->> 'type' in ('singleChoice', 'multipleChoice', 'dropdown', 'rating', 'yesNo')
   ),
   demo_rows as (
-    select r.status, r.furthest_step_index, r.started_at, r.submitted_at,
+    -- No ids or timestamps, so a row can't be tied to a person by when they answered.
+    select r.status, r.furthest_step_index,
       coalesce((
         select jsonb_object_agg(cf.id, r.answers -> cf.id)
         from choice_fields cf where r.answers ? cf.id
@@ -293,7 +294,7 @@ as $$
   select jsonb_build_object(
     'versionId', (select published_version_id from demo),
     'schema', (select v.schema from public.form_versions v join demo on v.id = demo.published_version_id),
-    'responses', coalesce((select jsonb_agg(to_jsonb(demo_rows)) from demo_rows), '[]'::jsonb)
+    'responses', coalesce((select jsonb_agg(to_jsonb(demo_rows) order by random()) from demo_rows), '[]'::jsonb)
   )
 $$;
 

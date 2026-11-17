@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui";
 import { loadForm, type Answers, type ResponseRecord } from "@/core";
 import { ResponsesDashboard, type VersionInfo } from "@/features/responses/ResponsesDashboard";
-import { RESPONSE_COLUMNS } from "@/lib/supabase/database.types";
+import { RESPONSE_COLUMNS } from "@/lib/supabase/columns";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Responses" };
@@ -54,7 +54,7 @@ async function ResponsesData({ params }: { params: PageProps<"/forms/[id]/respon
   const responses: ResponseRecord[] = (rows ?? []).map((r) => ({
     id: r.id,
     versionId: r.version_id,
-    status: r.status,
+    status: r.status as ResponseRecord["status"], // check constraint: draft | submitted
     answers: (r.answers ?? {}) as Answers,
     furthestStepIndex: r.furthest_step_index,
     startedAt: r.started_at,
