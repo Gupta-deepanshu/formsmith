@@ -23,9 +23,18 @@ export const EMPTY_HISTORY: History = { past: [], future: [] };
 export const HISTORY_LIMIT = 200;
 export const COALESCE_WINDOW_MS = 600;
 
-export function record(history: History, entry: HistoryEntry, windowMs = COALESCE_WINDOW_MS): History {
+export function record(
+  history: History,
+  entry: HistoryEntry,
+  windowMs = COALESCE_WINDOW_MS,
+): History {
   const last = history.past.at(-1);
-  if (last && entry.coalesceKey && last.coalesceKey === entry.coalesceKey && entry.at - last.at <= windowMs) {
+  if (
+    last &&
+    entry.coalesceKey &&
+    last.coalesceKey === entry.coalesceKey &&
+    entry.at - last.at <= windowMs
+  ) {
     const merged: HistoryEntry = {
       ...last,
       ops: [...last.ops, ...entry.ops],
@@ -35,7 +44,10 @@ export function record(history: History, entry: HistoryEntry, windowMs = COALESC
     return { past: [...history.past.slice(0, -1), merged], future: [] };
   }
   const past = [...history.past, entry];
-  return { past: past.length > HISTORY_LIMIT ? past.slice(past.length - HISTORY_LIMIT) : past, future: [] };
+  return {
+    past: past.length > HISTORY_LIMIT ? past.slice(past.length - HISTORY_LIMIT) : past,
+    future: [],
+  };
 }
 
 /** Pop the entry to undo. The caller applies `entry.inverse`, then calls `afterUndo`. */
@@ -60,8 +72,10 @@ export function afterRedo(history: History): History {
 export function coalesceKeyFor(ops: readonly PatchOp[]): string | undefined {
   if (ops.length !== 1) return undefined;
   const op = ops[0]!;
-  if (op.op === "updateField") return `field:${op.fieldId}:${Object.keys(op.changes).sort().join(",")}`;
-  if (op.op === "updateStep") return `step:${op.stepId}:${Object.keys(op.changes).sort().join(",")}`;
+  if (op.op === "updateField")
+    return `field:${op.fieldId}:${Object.keys(op.changes).sort().join(",")}`;
+  if (op.op === "updateStep")
+    return `step:${op.stepId}:${Object.keys(op.changes).sort().join(",")}`;
   if (op.op === "updateForm") return `form:${Object.keys(op.changes).sort().join(",")}`;
   return undefined;
 }

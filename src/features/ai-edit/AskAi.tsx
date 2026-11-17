@@ -6,7 +6,12 @@ import { Button, Icon, Textarea, useToast } from "@/components/ui";
 import { PatchOpSchema, type PatchOp } from "@/core";
 import { AI_LIMITS } from "@/core/ai/schemas";
 import { ensureSession } from "@/lib/supabase/client";
-import { selectFormDefinition, useEditor, useEditorActions, useEditorStore } from "@/features/editor/store";
+import {
+  selectFormDefinition,
+  useEditor,
+  useEditorActions,
+  useEditorStore,
+} from "@/features/editor/store";
 
 const EditResponse = z.object({
   summary: z.string(),
@@ -19,10 +24,14 @@ export type AiErrorBody = { error?: string; reason?: string; retryAfterSeconds?:
 
 export function aiErrorMessage(status: number, body: AiErrorBody): string {
   if (status === 429) {
-    if (body.reason === "anonymous_limit") return "You've used your 3 AI requests in the sandbox. Sign in for more.";
-    if (body.reason === "global") return "The AI is busy today (free-tier limit reached). Please try again later.";
+    if (body.reason === "anonymous_limit")
+      return "You've used your 3 AI requests in the sandbox. Sign in for more.";
+    if (body.reason === "global")
+      return "The AI is busy today (free-tier limit reached). Please try again later.";
     const mins = body.retryAfterSeconds ? Math.ceil(body.retryAfterSeconds / 60) : null;
-    return mins ? `AI limit reached. Try again in about ${mins} minute${mins === 1 ? "" : "s"}.` : "AI limit reached. Please try again later.";
+    return mins
+      ? `AI limit reached. Try again in about ${mins} minute${mins === 1 ? "" : "s"}.`
+      : "AI limit reached. Please try again later.";
   }
   return body.error ?? "The AI request failed. Please try again.";
 }
@@ -38,7 +47,9 @@ export function AskAi({ sandbox = false }: { sandbox?: boolean }) {
   const [remaining, setRemaining] = useState<number | null>(null);
   const store = useEditorStore();
   const highlight = useEditor((s) => s.aiHighlight);
-  const canUndoAi = useEditor((s) => !!s.aiHighlight && s.history.past.at(-1)?.at === s.aiHighlight.historyAt);
+  const canUndoAi = useEditor(
+    (s) => !!s.aiHighlight && s.history.past.at(-1)?.at === s.aiHighlight.historyAt,
+  );
   const { dispatch, setAiHighlight, undo } = useEditorActions();
   const toast = useToast();
 
@@ -49,7 +60,11 @@ export function AskAi({ sandbox = false }: { sandbox?: boolean }) {
     try {
       if (sandbox) await ensureSession();
       const form = selectFormDefinition(store.getState());
-      const res = await fetch("/api/ai/edit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ instruction: text, form }) });
+      const res = await fetch("/api/ai/edit", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ instruction: text, form }),
+      });
       const body = (await res.json().catch(() => ({}))) as AiErrorBody;
       if (!res.ok) {
         toast.show({ message: aiErrorMessage(res.status, body), tone: "danger" });
@@ -63,17 +78,33 @@ export function AskAi({ sandbox = false }: { sandbox?: boolean }) {
       }
       if (parsed.data.remaining != null) setRemaining(parsed.data.remaining);
       if (ops.data.length === 0) {
-        toast.show({ message: parsed.data.rejected.length ? `No changes applied: ${parsed.data.rejected[0]!.reason}` : "The AI didn't find anything to change." });
+        toast.show({
+          message: parsed.data.rejected.length
+            ? `No changes applied: ${parsed.data.rejected[0]!.reason}`
+            : "The AI didn't find anything to change.",
+        });
         return;
       }
-      const applied = dispatch(ops.data as PatchOp[], { source: "ai", label: `AI: ${parsed.data.summary}` });
+      const applied = dispatch(ops.data as PatchOp[], {
+        source: "ai",
+        label: `AI: ${parsed.data.summary}`,
+      });
       if (!applied) {
-        toast.show({ message: "The form changed while the AI was working. Please try again.", tone: "danger" });
+        toast.show({
+          message: "The form changed while the AI was working. Please try again.",
+          tone: "danger",
+        });
         return;
       }
       const after = store.getState();
       const changed = changedIds(ops.data as PatchOp[], after.form);
-      setAiHighlight({ ...changed, summary: parsed.data.summary, historyAt: after.history.past.at(-1)!.at, applied: ops.data.length, skipped: parsed.data.rejected.length });
+      setAiHighlight({
+        ...changed,
+        summary: parsed.data.summary,
+        historyAt: after.history.past.at(-1)!.at,
+        applied: ops.data.length,
+        skipped: parsed.data.rejected.length,
+      });
       setInstruction("");
     } catch {
       toast.show({ message: "Couldn't reach the AI. Check your connection.", tone: "danger" });
@@ -83,27 +114,39 @@ export function AskAi({ sandbox = false }: { sandbox?: boolean }) {
   };
 
   return (
-    <section aria-labelledby="ask-ai-heading" className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card">
+    <section
+      aria-labelledby="ask-ai-heading"
+      className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4 shadow-card"
+    >
       <h2 id="ask-ai-heading" className="flex items-center gap-2 text-sm font-semibold">
         <Icon name="sparkle" className="text-accent" />
         Ask AI to edit
       </h2>
 
       {highlight ? (
-        <div className="flex animate-enter flex-col gap-2 rounded-control border border-accent bg-accent-soft p-3 text-sm" role="status">
+        <div
+          className="flex animate-enter flex-col gap-2 rounded-control border border-accent bg-accent-soft p-3 text-sm"
+          role="status"
+        >
           <p>
             <span className="font-medium">{highlight.summary}</span>
             <span className="text-fg-muted">
               {" "}
               · {highlight.applied} change{highlight.applied === 1 ? "" : "s"} applied
-              {highlight.skipped ? `, ${highlight.skipped} skipped` : ""}. Changed items are highlighted.
+              {highlight.skipped ? `, ${highlight.skipped} skipped` : ""}. Changed items are
+              highlighted.
             </span>
           </p>
           <div className="flex gap-2">
             <Button size="sm" variant="primary" onClick={() => setAiHighlight(null)}>
               Keep changes
             </Button>
-            <Button size="sm" onClick={undo} disabled={!canUndoAi} leadingIcon={<Icon name="undo" />}>
+            <Button
+              size="sm"
+              onClick={undo}
+              disabled={!canUndoAi}
+              leadingIcon={<Icon name="undo" />}
+            >
               Undo AI edit
             </Button>
           </div>
@@ -139,9 +182,20 @@ export function AskAi({ sandbox = false }: { sandbox?: boolean }) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-fg-muted">
             Only the form&apos;s structure is sent, never responses.
-            {remaining != null ? ` ${remaining} AI request${remaining === 1 ? "" : "s"} left${sandbox ? "" : " this hour"}.` : sandbox ? " The sandbox allows 3 AI requests." : ""}
+            {remaining != null
+              ? ` ${remaining} AI request${remaining === 1 ? "" : "s"} left${sandbox ? "" : " this hour"}.`
+              : sandbox
+                ? " The sandbox allows 3 AI requests."
+                : ""}
           </p>
-          <Button type="submit" size="sm" variant="primary" loading={pending} disabled={!instruction.trim()} leadingIcon={<Icon name="sparkle" />}>
+          <Button
+            type="submit"
+            size="sm"
+            variant="primary"
+            loading={pending}
+            disabled={!instruction.trim()}
+            leadingIcon={<Icon name="sparkle" />}
+          >
             {pending ? "Thinking…" : "Apply"}
           </Button>
         </div>
@@ -150,7 +204,10 @@ export function AskAi({ sandbox = false }: { sandbox?: boolean }) {
   );
 }
 
-function changedIds(ops: PatchOp[], form: { fields: Record<string, unknown>; steps: Record<string, unknown> }) {
+function changedIds(
+  ops: PatchOp[],
+  form: { fields: Record<string, unknown>; steps: Record<string, unknown> },
+) {
   const fieldIds = new Set<string>();
   const stepIds = new Set<string>();
   for (const op of ops) {
@@ -161,5 +218,8 @@ function changedIds(ops: PatchOp[], form: { fields: Record<string, unknown>; ste
       op.step.fields.forEach((f) => fieldIds.add(f.id));
     } else if (op.op === "updateStep" || op.op === "moveStep") stepIds.add(op.stepId);
   }
-  return { fieldIds: [...fieldIds].filter((id) => id in form.fields), stepIds: [...stepIds].filter((id) => id in form.steps) };
+  return {
+    fieldIds: [...fieldIds].filter((id) => id in form.fields),
+    stepIds: [...stepIds].filter((id) => id in form.steps),
+  };
 }

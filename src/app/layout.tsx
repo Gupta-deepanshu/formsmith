@@ -8,7 +8,8 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: { default: "Formsmith — AI-assisted form builder", template: "%s · Formsmith" },
-  description: "Describe a form in plain English, refine it with AI or by hand, publish it, and analyse responses.",
+  description:
+    "Describe a form in plain English, refine it with AI or by hand, publish it, and analyse responses.",
 };
 
 export const viewport: Viewport = {
@@ -27,12 +28,19 @@ const themeScript = `(function(){try{var t=localStorage.getItem("theme");var d=t
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-full flex-col bg-canvas text-fg">
-        <a href="#main" className="sr-only z-50 rounded-control bg-surface px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
+        <a
+          href="#main"
+          className="sr-only z-50 rounded-control bg-surface px-3 py-2 focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+        >
           Skip to content
         </a>
         <ToastProvider>{children}</ToastProvider>

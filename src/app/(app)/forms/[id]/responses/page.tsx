@@ -26,15 +26,30 @@ async function ResponsesData({ params }: { params: PageProps<"/forms/[id]/respon
   const supabase = await createClient();
   // RLS scopes all three queries to the owner.
   const [{ data: form }, { data: versions }, { data: rows }] = await Promise.all([
-    supabase.from("forms").select("id, title, slug, published_version_id").eq("id", id).maybeSingle(),
-    supabase.from("form_versions").select("id, version, schema, published_at").eq("form_id", id).order("version", { ascending: false }),
-    supabase.from("responses").select(RESPONSE_COLUMNS).eq("form_id", id).order("started_at", { ascending: false }).limit(MAX_ROWS),
+    supabase
+      .from("forms")
+      .select("id, title, slug, published_version_id")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("form_versions")
+      .select("id, version, schema, published_at")
+      .eq("form_id", id)
+      .order("version", { ascending: false }),
+    supabase
+      .from("responses")
+      .select(RESPONSE_COLUMNS)
+      .eq("form_id", id)
+      .order("started_at", { ascending: false })
+      .limit(MAX_ROWS),
   ]);
   if (!form) notFound();
 
   const versionInfos: VersionInfo[] = (versions ?? []).flatMap((v) => {
     const loaded = loadForm(v.schema);
-    return loaded.ok ? [{ id: v.id, version: v.version, publishedAt: v.published_at, form: loaded.form }] : [];
+    return loaded.ok
+      ? [{ id: v.id, version: v.version, publishedAt: v.published_at, form: loaded.form }]
+      : [];
   });
   const responses: ResponseRecord[] = (rows ?? []).map((r) => ({
     id: r.id,
@@ -46,5 +61,15 @@ async function ResponsesData({ params }: { params: PageProps<"/forms/[id]/respon
     submittedAt: r.submitted_at,
   }));
 
-  return <ResponsesDashboard title={form.title} formId={form.id} slug={form.slug} isPublished={!!form.published_version_id} versions={versionInfos} responses={responses} truncated={responses.length >= MAX_ROWS} />;
+  return (
+    <ResponsesDashboard
+      title={form.title}
+      formId={form.id}
+      slug={form.slug}
+      isPublished={!!form.published_version_id}
+      versions={versionInfos}
+      responses={responses}
+      truncated={responses.length >= MAX_ROWS}
+    />
+  );
 }

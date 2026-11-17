@@ -30,7 +30,15 @@ type Outcome =
   | { kind: "ok"; form: FormDefinition; notes: string[] }
   | { kind: "fallback"; form: FormDefinition; templateName: string; reason: string };
 
-export function GenerateForm({ onUse, sandbox = false, busy = false }: { onUse: (form: FormDefinition) => void | Promise<void>; sandbox?: boolean; busy?: boolean }) {
+export function GenerateForm({
+  onUse,
+  sandbox = false,
+  busy = false,
+}: {
+  onUse: (form: FormDefinition) => void | Promise<void>;
+  sandbox?: boolean;
+  busy?: boolean;
+}) {
   const [description, setDescription] = useState("");
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -96,7 +104,10 @@ export function GenerateForm({ onUse, sandbox = false, busy = false }: { onUse: 
           }}
           className="flex flex-col gap-3"
         >
-          <Field label="Describe your form" help="Who is it for, what should it ask, and any conditions. The AI drafts it; you refine it after.">
+          <Field
+            label="Describe your form"
+            help="Who is it for, what should it ask, and any conditions. The AI drafts it; you refine it after."
+          >
             <Textarea
               rows={6}
               value={description}
@@ -115,7 +126,9 @@ export function GenerateForm({ onUse, sandbox = false, busy = false }: { onUse: 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs text-fg-muted">
               {description.length} / {AI_LIMITS.descriptionMax}
-              {remaining != null ? ` · ${remaining} AI request${remaining === 1 ? "" : "s"} left` : ""}
+              {remaining != null
+                ? ` · ${remaining} AI request${remaining === 1 ? "" : "s"} left`
+                : ""}
             </span>
             <div className="flex gap-2">
               {isLoading ? (
@@ -123,7 +136,13 @@ export function GenerateForm({ onUse, sandbox = false, busy = false }: { onUse: 
                   Stop
                 </Button>
               ) : null}
-              <Button type="submit" variant="primary" loading={isLoading} disabled={description.trim().length < 10} leadingIcon={<Icon name="sparkle" />}>
+              <Button
+                type="submit"
+                variant="primary"
+                loading={isLoading}
+                disabled={description.trim().length < 10}
+                leadingIcon={<Icon name="sparkle" />}
+              >
                 {isLoading ? "Generating…" : outcome ? "Generate again" : "Generate form"}
               </Button>
             </div>
@@ -133,7 +152,13 @@ export function GenerateForm({ onUse, sandbox = false, busy = false }: { onUse: 
         <div className="flex flex-col gap-2">
           <p className="text-sm font-medium text-fg-muted">Examples</p>
           {EXAMPLES.map((ex) => (
-            <button key={ex} type="button" onClick={() => setDescription(ex)} disabled={isLoading} className="rounded-control border border-line bg-surface px-3 py-2 text-left text-sm text-fg-muted hover:border-line-strong hover:text-fg">
+            <button
+              key={ex}
+              type="button"
+              onClick={() => setDescription(ex)}
+              disabled={isLoading}
+              className="rounded-control border border-line bg-surface px-3 py-2 text-left text-sm text-fg-muted hover:border-line-strong hover:text-fg"
+            >
               {ex}
             </button>
           ))}
@@ -151,26 +176,49 @@ export function GenerateForm({ onUse, sandbox = false, busy = false }: { onUse: 
         </details>
       </div>
 
-      <section aria-labelledby="draft-heading" aria-busy={isLoading} className="flex flex-col gap-3">
+      <section
+        aria-labelledby="draft-heading"
+        aria-busy={isLoading}
+        className="flex flex-col gap-3"
+      >
         <div className="flex items-center justify-between">
-          <h2 id="draft-heading" className="text-xs font-semibold tracking-wide text-fg-muted uppercase">
+          <h2
+            id="draft-heading"
+            className="text-xs font-semibold tracking-wide text-fg-muted uppercase"
+          >
             Draft
           </h2>
           <span className="text-sm text-fg-muted" aria-live="polite">
-            {isLoading ? `Writing… ${questionCount} question${questionCount === 1 ? "" : "s"} so far` : outcome?.kind === "ok" ? `${questionCount} questions ready` : ""}
+            {isLoading
+              ? `Writing… ${questionCount} question${questionCount === 1 ? "" : "s"} so far`
+              : outcome?.kind === "ok"
+                ? `${questionCount} questions ready`
+                : ""}
           </span>
         </div>
 
         {outcome?.kind === "fallback" ? (
-          <div role="alert" className="rounded-card border border-warning bg-warning-soft p-4 text-sm">
+          <div
+            role="alert"
+            className="rounded-card border border-warning bg-warning-soft p-4 text-sm"
+          >
             <p className="font-medium">The AI couldn&apos;t generate this form.</p>
             <p className="mt-1 text-fg-muted">
-              {outcome.reason} We&apos;ve loaded the <strong>{outcome.templateName}</strong> template instead, so you can start from that or try again.
+              {outcome.reason} We&apos;ve loaded the <strong>{outcome.templateName}</strong>{" "}
+              template instead, so you can start from that or try again.
             </p>
           </div>
         ) : null}
 
-        {shown ? <FormOutline form={shown} streaming={isLoading} /> : <Card className="grid min-h-64 place-items-center text-center text-sm text-fg-muted">{isLoading ? "Waiting for the first questions…" : "Your draft will appear here as the AI writes it."}</Card>}
+        {shown ? (
+          <FormOutline form={shown} streaming={isLoading} />
+        ) : (
+          <Card className="grid min-h-64 place-items-center text-center text-sm text-fg-muted">
+            {isLoading
+              ? "Waiting for the first questions…"
+              : "Your draft will appear here as the AI writes it."}
+          </Card>
+        )}
 
         {outcome ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -184,7 +232,9 @@ export function GenerateForm({ onUse, sandbox = false, busy = false }: { onUse: 
             ) : null}
             {outcome.kind === "ok" && outcome.notes.length ? (
               <details className="text-sm text-fg-muted">
-                <summary className="cursor-pointer">{outcome.notes.length} automatic fix{outcome.notes.length === 1 ? "" : "es"}</summary>
+                <summary className="cursor-pointer">
+                  {outcome.notes.length} automatic fix{outcome.notes.length === 1 ? "" : "es"}
+                </summary>
                 <ul className="mt-2 list-disc pl-5">
                   {outcome.notes.map((n, i) => (
                     <li key={i}>{n}</li>
@@ -222,7 +272,9 @@ function FormOutline({ form, streaming }: { form: FormDefinition; streaming: boo
                       {f.label}
                       {f.required ? <span className="text-danger"> *</span> : null}
                     </span>
-                    {f.visibleIf ? <Icon name="rule" className="text-accent" label="Conditional" /> : null}
+                    {f.visibleIf ? (
+                      <Icon name="rule" className="text-accent" label="Conditional" />
+                    ) : null}
                     <span className="text-xs text-fg-muted">{FIELD_TYPE_META[f.type].label}</span>
                   </li>
                 ))}

@@ -39,7 +39,13 @@ export function clearBackup(versionId: string) {
 
 const DEBOUNCE_MS = 1000;
 
-export function useResponseAutosave({ versionId, initialResponseId }: { versionId: string; initialResponseId: string | null }) {
+export function useResponseAutosave({
+  versionId,
+  initialResponseId,
+}: {
+  versionId: string;
+  initialResponseId: string | null;
+}) {
   const [state, setState] = useState<SaveState>(initialResponseId ? "saved" : "idle");
   const responseId = useRef<string | null>(initialResponseId);
   const pending = useRef<{ answers: Answers; progress: Progress } | null>(null);
@@ -61,20 +67,39 @@ export function useResponseAutosave({ versionId, initialResponseId }: { versionI
         try {
           await ensureSession();
           const supabase = createClient();
-          const row = { answers: job.answers as Json, last_step_id: job.progress.stepId, furthest_step_index: Math.min(100, job.progress.furthestIndex) };
+          const row = {
+            answers: job.answers as Json,
+            last_step_id: job.progress.stepId,
+            furthest_step_index: Math.min(100, job.progress.furthestIndex),
+          };
           if (!responseId.current) {
-            const { data, error } = await supabase.from("responses").insert({ version_id: versionId, ...row }).select("id").single();
+            const { data, error } = await supabase
+              .from("responses")
+              .insert({ version_id: versionId, ...row })
+              .select("id")
+              .single();
             if (error?.code === "23505") {
               // A draft already exists for this session (e.g. another tab): adopt it.
-              const { data: existing } = await supabase.from("responses").select("id").eq("version_id", versionId).eq("status", "draft").maybeSingle();
+              const { data: existing } = await supabase
+                .from("responses")
+                .select("id")
+                .eq("version_id", versionId)
+                .eq("status", "draft")
+                .maybeSingle();
               if (!existing) throw error;
               responseId.current = existing.id;
-              const { error: e2 } = await supabase.from("responses").update(row).eq("id", existing.id);
+              const { error: e2 } = await supabase
+                .from("responses")
+                .update(row)
+                .eq("id", existing.id);
               if (e2) throw e2;
             } else if (error || !data) throw error ?? new Error("insert failed");
             else responseId.current = data.id;
           } else {
-            const { error } = await supabase.from("responses").update(row).eq("id", responseId.current);
+            const { error } = await supabase
+              .from("responses")
+              .update(row)
+              .eq("id", responseId.current);
             if (error) throw error;
           }
         } catch {
@@ -97,7 +122,15 @@ export function useResponseAutosave({ versionId, initialResponseId }: { versionI
   const onProgress = useCallback(
     (answers: Answers, progress: Progress) => {
       try {
-        localStorage.setItem(backupKey(versionId), JSON.stringify({ answers, stepId: progress.stepId, furthestIndex: progress.furthestIndex, savedAt: Date.now() } satisfies LocalBackup));
+        localStorage.setItem(
+          backupKey(versionId),
+          JSON.stringify({
+            answers,
+            stepId: progress.stepId,
+            furthestIndex: progress.furthestIndex,
+            savedAt: Date.now(),
+          } satisfies LocalBackup),
+        );
       } catch {
         // storage blocked: server autosave still works
       }

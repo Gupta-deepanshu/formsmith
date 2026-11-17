@@ -32,7 +32,10 @@ export function timeAgo(iso: string, now = Date.now()): string {
 }
 
 export function formatDateTime(iso: string): string {
-  return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+  return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(
+    new Date(iso),
+  );
 }
 
-export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString("en")} ${n === 1 ? one : many}`;
+export const plural = (n: number, one: string, many = `${one}s`) =>
+  `${n.toLocaleString("en")} ${n === 1 ? one : many}`;

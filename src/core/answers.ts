@@ -18,7 +18,9 @@ export function formatAnswer(field: Field, value: AnswerValue | undefined): stri
       return `${value} / ${field.max}`;
     case "date": {
       const d = typeof value === "string" ? new Date(`${value}T00:00:00`) : null;
-      return d && !Number.isNaN(d.getTime()) ? new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(d) : String(value);
+      return d && !Number.isNaN(d.getTime())
+        ? new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(d)
+        : String(value);
     }
     default:
       return Array.isArray(value) ? value.join(", ") : String(value);

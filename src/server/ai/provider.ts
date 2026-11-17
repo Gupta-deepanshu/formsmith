@@ -42,7 +42,9 @@ export function describeAiError(error: unknown): string {
  * Run `call` with the primary model; on a rate-limit error, retry once with the fallback
  * model. Other errors are not retried here (the SDK already retries transient failures).
  */
-export async function withModelFallback<T>(call: (choice: ModelChoice) => Promise<T>): Promise<{ value: T; modelId: string }> {
+export async function withModelFallback<T>(
+  call: (choice: ModelChoice) => Promise<T>,
+): Promise<{ value: T; modelId: string }> {
   const chain = modelChain();
   let lastError: unknown;
   for (let i = 0; i < chain.length; i++) {

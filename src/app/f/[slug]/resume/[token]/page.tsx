@@ -4,7 +4,11 @@ import { Spinner } from "@/components/ui";
 import { PublicShell } from "@/features/public-form/PublicShell";
 import { ClaimResume } from "@/features/public-form/ClaimResume";
 
-export const metadata: Metadata = { title: "Resume your response", robots: { index: false }, referrer: "no-referrer" };
+export const metadata: Metadata = {
+  title: "Resume your response",
+  robots: { index: false },
+  referrer: "no-referrer",
+};
 
 export default function ResumePage({ params }: PageProps<"/f/[slug]/resume/[token]">) {
   return (

@@ -9,7 +9,15 @@ import { fieldDomId } from "./FieldControl";
  * so screen readers read the count and list. Each item links to its field and moves focus
  * to the actual control.
  */
-export function ErrorSummary({ errors, fields, focusKey }: { errors: Record<string, string>; fields: Field[]; focusKey: number }) {
+export function ErrorSummary({
+  errors,
+  fields,
+  focusKey,
+}: {
+  errors: Record<string, string>;
+  fields: Field[];
+  focusKey: number;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const items = fields.filter((f) => errors[f.id]);
 
@@ -23,15 +31,25 @@ export function ErrorSummary({ errors, fields, focusKey }: { errors: Record<stri
 
   const focusField = (id: string) => {
     const root = document.getElementById(fieldDomId(id));
-    const target = root?.matches("input, select, textarea") ? root : root?.querySelector<HTMLElement>("input, select, textarea");
+    const target = root?.matches("input, select, textarea")
+      ? root
+      : root?.querySelector<HTMLElement>("input, select, textarea");
     target?.focus();
     root?.scrollIntoView({ block: "center" });
   };
 
   return (
-    <div ref={ref} tabIndex={-1} role="alert" aria-labelledby="error-summary-title" className="rounded-card border-2 border-danger bg-danger-soft p-4 focus-visible:outline-offset-4">
+    <div
+      ref={ref}
+      tabIndex={-1}
+      role="alert"
+      aria-labelledby="error-summary-title"
+      className="rounded-card border-2 border-danger bg-danger-soft p-4 focus-visible:outline-offset-4"
+    >
       <h2 id="error-summary-title" className="text-sm font-semibold text-danger">
-        {items.length === 1 ? "There is a problem on this step" : `There are ${items.length} problems on this step`}
+        {items.length === 1
+          ? "There is a problem on this step"
+          : `There are ${items.length} problems on this step`}
       </h2>
       <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
         {items.map((f) => (

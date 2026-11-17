@@ -24,10 +24,15 @@ export async function POST(request: Request, ctx: RouteContext<"/api/responses/[
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getClaims();
   const uid = auth?.claims?.sub;
-  if (!uid) return Response.json({ error: "Your session expired. Refresh the page and try again." }, { status: 401 });
+  if (!uid)
+    return Response.json(
+      { error: "Your session expired. Refresh the page and try again." },
+      { status: 401 },
+    );
 
   const raw = await request.text();
-  if (raw.length > MAX_BODY) return Response.json({ error: "Your answers are too long." }, { status: 413 });
+  if (raw.length > MAX_BODY)
+    return Response.json({ error: "Your answers are too long." }, { status: 413 });
   let parsedBody: z.infer<typeof Body>;
   try {
     const r = Body.safeParse(JSON.parse(raw));
@@ -38,32 +43,54 @@ export async function POST(request: Request, ctx: RouteContext<"/api/responses/[
   }
 
   // 1. Ownership via RLS: this select only returns the row if it's the caller's own response.
-  const { data: response } = await supabase.from("responses").select("id, version_id, status, answers, respondent_id").eq("id", id).maybeSingle();
-  if (!response || response.respondent_id !== uid) return Response.json({ error: "Not found" }, { status: 404 });
-  if (response.status !== "draft") return Response.json({ error: "This response was already submitted." }, { status: 409 });
+  const { data: response } = await supabase
+    .from("responses")
+    .select("id, version_id, status, answers, respondent_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!response || response.respondent_id !== uid)
+    return Response.json({ error: "Not found" }, { status: 404 });
+  if (response.status !== "draft")
+    return Response.json({ error: "This response was already submitted." }, { status: 409 });
 
   // 2. The response's own version. Respondents can't read form_versions, so the admin client fetches it.
   const admin = createAdminClient();
-  const { data: version } = await admin.from("form_versions").select("schema").eq("id", response.version_id).single();
+  const { data: version } = await admin
+    .from("form_versions")
+    .select("schema")
+    .eq("id", response.version_id)
+    .single();
   const loaded = version ? loadForm(version.schema) : null;
   if (!loaded?.ok) return Response.json({ error: "This form is unavailable." }, { status: 410 });
 
   const merged: Answers = { ...((response.answers ?? {}) as Answers), ...parsedBody.answers };
   const result = validateSubmission(loaded.form, merged);
   if (!result.success) {
-    return Response.json({ error: "Some answers need attention.", errors: result.errors, firstInvalidStepId: result.firstInvalidStepId }, { status: 422 });
+    return Response.json(
+      {
+        error: "Some answers need attention.",
+        errors: result.errors,
+        firstInvalidStepId: result.firstInvalidStepId,
+      },
+      { status: 422 },
+    );
   }
 
   // 3. Mark submitted. The status guard makes double-submits a no-op (409), not a second write.
   const { data: updated, error } = await admin
     .from("responses")
-    .update({ answers: result.data as Json, status: "submitted", submitted_at: new Date().toISOString() })
+    .update({
+      answers: result.data as Json,
+      status: "submitted",
+      submitted_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .eq("respondent_id", uid)
     .eq("status", "draft")
     .select("id");
   if (error) return Response.json({ error: "Couldn't submit. Please try again." }, { status: 500 });
-  if (!updated?.length) return Response.json({ error: "This response was already submitted." }, { status: 409 });
+  if (!updated?.length)
+    return Response.json({ error: "This response was already submitted." }, { status: 409 });
 
   return Response.json({ ok: true }, { headers: { "cache-control": "no-store" } });
 }

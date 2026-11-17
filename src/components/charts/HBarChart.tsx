@@ -14,7 +14,21 @@ export type BarRow = { key: string; label: string; value: number; note?: string 
 
 const pct = (v: number, total: number) => (total > 0 ? Math.round((v / total) * 100) : 0);
 
-export function HBarChart({ title, description, rows, total, valueLabel = "Responses", className }: { title: string; description?: string; rows: BarRow[]; total: number; valueLabel?: string; className?: string }) {
+export function HBarChart({
+  title,
+  description,
+  rows,
+  total,
+  valueLabel = "Responses",
+  className,
+}: {
+  title: string;
+  description?: string;
+  rows: BarRow[];
+  total: number;
+  valueLabel?: string;
+  className?: string;
+}) {
   const id = useId();
   const [active, setActive] = useState<string | null>(null);
   const max = Math.max(1, ...rows.map((r) => r.value));
@@ -28,7 +42,10 @@ export function HBarChart({ title, description, rows, total, valueLabel = "Respo
         {description ? <p className="text-sm text-fg-muted">{description}</p> : null}
       </figcaption>
 
-      <ul className="flex flex-col gap-0.5" aria-label={`${title}, ${valueLabel.toLowerCase()} per item`}>
+      <ul
+        className="flex flex-col gap-0.5"
+        aria-label={`${title}, ${valueLabel.toLowerCase()} per item`}
+      >
         {rows.map((r) => {
           const share = pct(r.value, total);
           const isActive = active === r.key;
@@ -49,7 +66,10 @@ export function HBarChart({ title, description, rows, total, valueLabel = "Respo
               </span>
               <span aria-hidden="true" className="h-3 overflow-hidden rounded-r bg-accent-soft">
                 <span
-                  className={cn("block h-full origin-left rounded-r-[4px] bg-accent transition-[transform,filter] duration-200", isActive && "brightness-110")}
+                  className={cn(
+                    "block h-full origin-left rounded-r-[4px] bg-accent transition-[transform,filter] duration-200",
+                    isActive && "brightness-110",
+                  )}
                   style={{ transform: `scaleX(${r.value / max})` }}
                 />
               </span>
@@ -57,8 +77,12 @@ export function HBarChart({ title, description, rows, total, valueLabel = "Respo
                 {r.value.toLocaleString("en")} <span className="text-fg-muted">· {share}%</span>
               </span>
               {isActive ? (
-                <span role="presentation" className="pointer-events-none absolute -top-9 left-1/3 z-10 animate-fade rounded-control border border-line bg-surface px-2 py-1 text-xs whitespace-nowrap shadow-card">
-                  <span className="font-medium">{r.label}</span> · {r.value.toLocaleString("en")} {valueLabel.toLowerCase()} ({share}% of {total.toLocaleString("en")})
+                <span
+                  role="presentation"
+                  className="pointer-events-none absolute -top-9 left-1/3 z-10 animate-fade rounded-control border border-line bg-surface px-2 py-1 text-xs whitespace-nowrap shadow-card"
+                >
+                  <span className="font-medium">{r.label}</span> · {r.value.toLocaleString("en")}{" "}
+                  {valueLabel.toLowerCase()} ({share}% of {total.toLocaleString("en")})
                 </span>
               ) : null}
             </li>
@@ -101,14 +125,34 @@ export function HBarChart({ title, description, rows, total, valueLabel = "Respo
 }
 
 /** Stat tile with a meter: label, headline value, and a thin bar for the ratio. */
-export function StatTile({ label, value, ratio, detail }: { label: string; value: string; ratio?: number; detail?: string }) {
+export function StatTile({
+  label,
+  value,
+  ratio,
+  detail,
+}: {
+  label: string;
+  value: string;
+  ratio?: number;
+  detail?: string;
+}) {
   return (
     <div className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4 shadow-card">
       <p className="text-sm text-fg-muted">{label}</p>
       <p className="text-2xl font-semibold tabular-nums">{value}</p>
       {ratio !== undefined ? (
-        <span role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(ratio * 100)} className="block h-2 overflow-hidden rounded-full bg-accent-soft">
-          <span className="block h-full origin-left rounded-full bg-accent" style={{ transform: `scaleX(${ratio})` }} />
+        <span
+          role="meter"
+          aria-label={label}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(ratio * 100)}
+          className="block h-2 overflow-hidden rounded-full bg-accent-soft"
+        >
+          <span
+            className="block h-full origin-left rounded-full bg-accent"
+            style={{ transform: `scaleX(${ratio})` }}
+          />
         </span>
       ) : null}
       {detail ? <p className="text-xs text-fg-muted">{detail}</p> : null}

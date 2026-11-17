@@ -16,7 +16,14 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef, useState } from "react";
 import { Badge, Button, Dialog, Icon, Input, Select } from "@/components/ui";
-import { formatAnswer, sortableAnswer, toCsv, type Field, type FormDefinition, type ResponseRecord } from "@/core";
+import {
+  formatAnswer,
+  sortableAnswer,
+  toCsv,
+  type Field,
+  type FormDefinition,
+  type ResponseRecord,
+} from "@/core";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -43,21 +50,46 @@ const ROW_HEIGHT = 44;
 
 type StatusFilter = "all" | "submitted" | "draft";
 
-export function ResponsesTable({ fields, responses, formFor, versionLabel, fileName }: { fields: Field[]; responses: ResponseRecord[]; formFor: (versionId: string) => FormDefinition | undefined; versionLabel: (versionId: string) => string; fileName: string }) {
+export function ResponsesTable({
+  fields,
+  responses,
+  formFor,
+  versionLabel,
+  fileName,
+}: {
+  fields: Field[];
+  responses: ResponseRecord[];
+  formFor: (versionId: string) => FormDefinition | undefined;
+  versionLabel: (versionId: string) => string;
+  fileName: string;
+}) {
   const [sorting, setSorting] = useState<SortingState>([{ id: "updated", desc: true }]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [detail, setDetail] = useState<ResponseRecord | null>(null);
   const [visibleCount, setVisibleCount] = useState(8);
 
-  const data = useMemo(() => (status === "all" ? responses : responses.filter((r) => r.status === status)), [responses, status]);
+  const data = useMemo(
+    () => (status === "all" ? responses : responses.filter((r) => r.status === status)),
+    [responses, status],
+  );
   const shownFields = fields.slice(0, visibleCount);
 
   const columns = useMemo(
     () =>
       helper.columns([
-        helper.accessor((r) => r.submittedAt ?? r.startedAt, { id: "updated", header: "Date", cell: (c) => formatDateTime(c.getValue()), sortFn: "alphanumeric", enableGlobalFilter: false }),
-        helper.accessor((r) => (r.status === "submitted" ? "Submitted" : "In progress"), { id: "status", header: "Status", enableGlobalFilter: false }),
+        helper.accessor((r) => r.submittedAt ?? r.startedAt, {
+          id: "updated",
+          header: "Date",
+          cell: (c) => formatDateTime(c.getValue()),
+          sortFn: "alphanumeric",
+          enableGlobalFilter: false,
+        }),
+        helper.accessor((r) => (r.status === "submitted" ? "Submitted" : "In progress"), {
+          id: "status",
+          header: "Status",
+          enableGlobalFilter: false,
+        }),
         ...shownFields.map((f) =>
           helper.accessor((r) => formatAnswer(f, r.answers[f.id]), {
             id: f.id,
@@ -89,14 +121,25 @@ export function ResponsesTable({ fields, responses, formFor, versionLabel, fileN
   const scrollRef = useRef<HTMLDivElement>(null);
   const virtual = rows.length > VIRTUALIZE_AT;
   // eslint-disable-next-line react-hooks/incompatible-library -- React Compiler is not enabled; useVirtualizer is the documented API
-  const virtualizer = useVirtualizer({ count: rows.length, getScrollElement: () => scrollRef.current, estimateSize: () => ROW_HEIGHT, overscan: 10, getItemKey: (i) => rows[i]!.id, enabled: virtual });
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 10,
+    getItemKey: (i) => rows[i]!.id,
+    enabled: virtual,
+  });
   const items = virtual ? virtualizer.getVirtualItems() : null;
   const padTop = items?.[0]?.start ?? 0;
   const padBottom = items ? virtualizer.getTotalSize() - (items.at(-1)?.end ?? 0) : 0;
   const rendered = items ? items.map((i) => rows[i.index]!) : rows;
 
   const exportCsv = () => {
-    const csv = toCsv(fields, rows.map((r) => r.original), versionLabel);
+    const csv = toCsv(
+      fields,
+      rows.map((r) => r.original),
+      versionLabel,
+    );
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
@@ -109,7 +152,13 @@ export function ResponsesTable({ fields, responses, formFor, versionLabel, fileN
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-2">
         <div className="min-w-48 flex-1">
-          <Input type="search" aria-label="Search responses" placeholder="Search answers…" value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} />
+          <Input
+            type="search"
+            aria-label="Search responses"
+            placeholder="Search answers…"
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+          />
         </div>
         <div className="w-40">
           <Select
@@ -132,14 +181,23 @@ export function ResponsesTable({ fields, responses, formFor, versionLabel, fileN
         {fields.length > visibleCount ? (
           <>
             {" · "}
-            <button type="button" className="text-accent underline-offset-2 hover:underline" onClick={() => setVisibleCount(fields.length)}>
+            <button
+              type="button"
+              className="text-accent underline-offset-2 hover:underline"
+              onClick={() => setVisibleCount(fields.length)}
+            >
               Show all {fields.length} questions
             </button>
           </>
         ) : null}
       </p>
 
-      <div ref={scrollRef} className="max-h-[70dvh] overflow-auto rounded-card border border-line bg-surface shadow-card" tabIndex={0} aria-label="Responses table, scrollable">
+      <div
+        ref={scrollRef}
+        className="max-h-[70dvh] overflow-auto rounded-card border border-line bg-surface shadow-card"
+        tabIndex={0}
+        aria-label="Responses table, scrollable"
+      >
         <table className="w-full border-collapse text-left text-sm">
           <thead className="sticky top-0 z-10 bg-subtle">
             {table.getHeaderGroups().map((g) => (
@@ -147,12 +205,32 @@ export function ResponsesTable({ fields, responses, formFor, versionLabel, fileN
                 {g.headers.map((h) => {
                   const sorted = h.column.getIsSorted();
                   return (
-                    <th key={h.id} scope="col" aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "none"} className="border-b border-line px-3 py-2 font-medium whitespace-nowrap">
-                      <button type="button" onClick={h.column.getToggleSortingHandler()} className="inline-flex max-w-56 items-center gap-1 truncate rounded-control text-left hover:text-accent">
+                    <th
+                      key={h.id}
+                      scope="col"
+                      aria-sort={
+                        sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : "none"
+                      }
+                      className="border-b border-line px-3 py-2 font-medium whitespace-nowrap"
+                    >
+                      <button
+                        type="button"
+                        onClick={h.column.getToggleSortingHandler()}
+                        className="inline-flex max-w-56 items-center gap-1 truncate rounded-control text-left hover:text-accent"
+                      >
                         <span className="truncate">
                           <table.FlexRender header={h} />
                         </span>
-                        <Icon name={sorted === "asc" ? "chevronUp" : sorted === "desc" ? "chevronDown" : "grip"} className={cn("size-3.5", !sorted && "opacity-40")} />
+                        <Icon
+                          name={
+                            sorted === "asc"
+                              ? "chevronUp"
+                              : sorted === "desc"
+                                ? "chevronDown"
+                                : "grip"
+                          }
+                          className={cn("size-3.5", !sorted && "opacity-40")}
+                        />
                       </button>
                     </th>
                   );
@@ -170,15 +248,36 @@ export function ResponsesTable({ fields, responses, formFor, versionLabel, fileN
               </tr>
             ) : null}
             {rendered.map((row) => (
-              <tr key={row.id} className="border-b border-line last:border-0 hover:bg-subtle" style={virtual ? { height: ROW_HEIGHT } : undefined}>
+              <tr
+                key={row.id}
+                className="border-b border-line last:border-0 hover:bg-subtle"
+                style={virtual ? { height: ROW_HEIGHT } : undefined}
+              >
                 {row.getAllCells().map((cell) => (
-                  <td key={cell.id} className="max-w-64 truncate px-3 py-2" title={typeof cell.getValue() === "string" ? (cell.getValue() as string) : undefined}>
-                    {cell.column.id === "status" ? <Badge tone={row.original.status === "submitted" ? "success" : "neutral"}>{cell.getValue() as string}</Badge> : <table.FlexRender cell={cell} />}
+                  <td
+                    key={cell.id}
+                    className="max-w-64 truncate px-3 py-2"
+                    title={
+                      typeof cell.getValue() === "string" ? (cell.getValue() as string) : undefined
+                    }
+                  >
+                    {cell.column.id === "status" ? (
+                      <Badge tone={row.original.status === "submitted" ? "success" : "neutral"}>
+                        {cell.getValue() as string}
+                      </Badge>
+                    ) : (
+                      <table.FlexRender cell={cell} />
+                    )}
                   </td>
                 ))}
                 <td className="px-3 py-1 text-right">
                   <Button size="sm" variant="ghost" onClick={() => setDetail(row.original)}>
-                    View<span className="sr-only"> response from {formatDateTime(row.original.submittedAt ?? row.original.startedAt)}</span>
+                    View
+                    <span className="sr-only">
+                      {" "}
+                      response from{" "}
+                      {formatDateTime(row.original.submittedAt ?? row.original.startedAt)}
+                    </span>
                   </Button>
                 </td>
               </tr>
@@ -190,17 +289,44 @@ export function ResponsesTable({ fields, responses, formFor, versionLabel, fileN
             ) : null}
           </tbody>
         </table>
-        {rows.length === 0 ? <p className="p-6 text-center text-sm text-fg-muted">No responses match.</p> : null}
+        {rows.length === 0 ? (
+          <p className="p-6 text-center text-sm text-fg-muted">No responses match.</p>
+        ) : null}
       </div>
 
-      <ResponseDetail response={detail} onClose={() => setDetail(null)} form={detail ? formFor(detail.versionId) : undefined} versionLabel={versionLabel} />
+      <ResponseDetail
+        response={detail}
+        onClose={() => setDetail(null)}
+        form={detail ? formFor(detail.versionId) : undefined}
+        versionLabel={versionLabel}
+      />
     </div>
   );
 }
 
-function ResponseDetail({ response, onClose, form, versionLabel }: { response: ResponseRecord | null; onClose: () => void; form: FormDefinition | undefined; versionLabel: (id: string) => string }) {
+function ResponseDetail({
+  response,
+  onClose,
+  form,
+  versionLabel,
+}: {
+  response: ResponseRecord | null;
+  onClose: () => void;
+  form: FormDefinition | undefined;
+  versionLabel: (id: string) => string;
+}) {
   return (
-    <Dialog open={!!response} onClose={onClose} variant="drawer" title="Response" description={response ? `${response.status === "submitted" ? `Submitted ${formatDateTime(response.submittedAt!)}` : `In progress, started ${formatDateTime(response.startedAt)}`} · ${versionLabel(response.versionId)}` : undefined}>
+    <Dialog
+      open={!!response}
+      onClose={onClose}
+      variant="drawer"
+      title="Response"
+      description={
+        response
+          ? `${response.status === "submitted" ? `Submitted ${formatDateTime(response.submittedAt!)}` : `In progress, started ${formatDateTime(response.startedAt)}`} · ${versionLabel(response.versionId)}`
+          : undefined
+      }
+    >
       {response && form ? (
         <div className="flex flex-col gap-5">
           {form.steps
@@ -214,7 +340,14 @@ function ResponseDetail({ response, onClose, form, versionLabel }: { response: R
                     return (
                       <div key={f.id} className="px-3 py-2">
                         <dt className="text-sm text-fg-muted">{f.label}</dt>
-                        <dd className={cn("text-sm break-words whitespace-pre-wrap", !text && "text-fg-muted italic")}>{text || "No answer"}</dd>
+                        <dd
+                          className={cn(
+                            "text-sm break-words whitespace-pre-wrap",
+                            !text && "text-fg-muted italic",
+                          )}
+                        >
+                          {text || "No answer"}
+                        </dd>
                       </div>
                     );
                   })}

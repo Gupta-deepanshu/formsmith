@@ -107,7 +107,9 @@ export const ShortTextField = z.object({
   placeholder,
   minLength: z.int().min(0).max(LIMITS.textMax).optional(),
   maxLength: z.int().min(1).max(LIMITS.textMax).optional(),
-  pattern: z.object({ regex: z.string().min(1).max(200), message: z.string().min(1).max(200) }).optional(),
+  pattern: z
+    .object({ regex: z.string().min(1).max(200), message: z.string().min(1).max(200) })
+    .optional(),
 });
 export const LongTextField = z.object({
   ...base,
@@ -128,7 +130,12 @@ export const NumberField = z.object({
   integer: z.boolean().optional(),
 });
 export const SingleChoiceField = z.object({ ...base, type: z.literal("singleChoice"), options });
-export const DropdownField = z.object({ ...base, type: z.literal("dropdown"), options, placeholder });
+export const DropdownField = z.object({
+  ...base,
+  type: z.literal("dropdown"),
+  options,
+  placeholder,
+});
 export const MultipleChoiceField = z.object({
   ...base,
   type: z.literal("multipleChoice"),
@@ -187,14 +194,27 @@ export const FieldSchema = z
     YesNoField,
   ])
   .superRefine((f, ctx) => {
-    if ((f.type === "shortText" || f.type === "longText") && f.minLength != null && f.maxLength != null && f.minLength > f.maxLength) {
-      ctx.addIssue({ code: "custom", path: ["minLength"], message: "Min length is greater than max length" });
+    if (
+      (f.type === "shortText" || f.type === "longText") &&
+      f.minLength != null &&
+      f.maxLength != null &&
+      f.minLength > f.maxLength
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["minLength"],
+        message: "Min length is greater than max length",
+      });
     }
     if (f.type === "shortText" && f.pattern) {
       try {
         new RegExp(f.pattern.regex);
       } catch {
-        ctx.addIssue({ code: "custom", path: ["pattern", "regex"], message: "Invalid regular expression" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["pattern", "regex"],
+          message: "Invalid regular expression",
+        });
       }
     }
     if (f.type === "number" && f.min != null && f.max != null && f.min > f.max) {
@@ -202,19 +222,36 @@ export const FieldSchema = z
     }
     if (f.type === "multipleChoice") {
       if (f.minSelected != null && f.maxSelected != null && f.minSelected > f.maxSelected) {
-        ctx.addIssue({ code: "custom", path: ["minSelected"], message: "Min selections is greater than max" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["minSelected"],
+          message: "Min selections is greater than max",
+        });
       }
       if (f.maxSelected != null && f.maxSelected > f.options.length) {
-        ctx.addIssue({ code: "custom", path: ["maxSelected"], message: "Max selections exceeds the number of options" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["maxSelected"],
+          message: "Max selections exceeds the number of options",
+        });
       }
     }
     if (f.type === "date" && f.minDate && f.maxDate && f.minDate > f.maxDate) {
-      ctx.addIssue({ code: "custom", path: ["minDate"], message: "Earliest date is after latest date" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["minDate"],
+        message: "Earliest date is after latest date",
+      });
     }
     if ("options" in f) {
       const seen = new Set<string>();
       f.options.forEach((o, i) => {
-        if (seen.has(o.id)) ctx.addIssue({ code: "custom", path: ["options", i, "id"], message: "Duplicate option id" });
+        if (seen.has(o.id))
+          ctx.addIssue({
+            code: "custom",
+            path: ["options", i, "id"],
+            message: "Duplicate option id",
+          });
         seen.add(o.id);
       });
     }
@@ -273,7 +310,13 @@ export type FormDefinition = z.infer<typeof FormDefinitionSchema>;
  * single choice/dropdown -> option id, multiple choice -> option ids, yes/no -> boolean.
  * Choice answers store option ids, not labels, so renaming an option never corrupts data.
  */
-export const AnswerValue = z.union([z.string(), z.number(), z.boolean(), z.array(z.string()), z.null()]);
+export const AnswerValue = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.array(z.string()),
+  z.null(),
+]);
 export type AnswerValue = z.infer<typeof AnswerValue>;
 export const AnswersSchema = z.record(z.string(), AnswerValue);
 export type Answers = Record<string, AnswerValue | undefined>;

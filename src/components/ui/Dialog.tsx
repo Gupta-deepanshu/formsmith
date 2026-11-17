@@ -23,7 +23,18 @@ export type DialogProps = {
   className?: string;
 };
 
-export function Dialog({ open, onClose, title, description, children, footer, size = "md", variant = "modal", initialFocus, className }: DialogProps) {
+export function Dialog({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  footer,
+  size = "md",
+  variant = "modal",
+  initialFocus,
+  className,
+}: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const returnTo = useRef<HTMLElement | null>(null);
   const titleId = useId();
@@ -70,11 +81,19 @@ export function Dialog({ open, onClose, title, description, children, footer, si
       }}
       className={cn(
         "m-0 max-h-none max-w-none bg-transparent p-0 text-fg backdrop:animate-fade open:flex",
-        variant === "drawer" ? "ml-auto h-dvh w-full max-w-xl" : "m-auto w-[calc(100%-2rem)] items-center justify-center",
+        variant === "drawer"
+          ? "ml-auto h-dvh w-full max-w-xl"
+          : "m-auto w-[calc(100%-2rem)] items-center justify-center",
         variant === "modal" && widths[size],
       )}
     >
-      <div className={cn("flex w-full flex-col border border-line bg-surface shadow-card", variant === "drawer" ? "h-full animate-fade" : "max-h-[85dvh] animate-enter rounded-card", className)}>
+      <div
+        className={cn(
+          "flex w-full flex-col border border-line bg-surface shadow-card",
+          variant === "drawer" ? "h-full animate-fade" : "max-h-[85dvh] animate-enter rounded-card",
+          className,
+        )}
+      >
         <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
           <div>
             <h2 id={titleId} className="text-base font-semibold">
@@ -86,12 +105,21 @@ export function Dialog({ open, onClose, title, description, children, footer, si
               </p>
             ) : null}
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="-m-1 rounded-control p-1 text-fg-muted hover:bg-subtle hover:text-fg">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="-m-1 rounded-control p-1 text-fg-muted hover:bg-subtle hover:text-fg"
+          >
             <Icon name="x" />
           </button>
         </header>
         <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
-        {footer ? <footer className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3">{footer}</footer> : null}
+        {footer ? (
+          <footer className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3">
+            {footer}
+          </footer>
+        ) : null}
       </div>
     </dialog>
   );

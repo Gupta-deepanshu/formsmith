@@ -17,7 +17,14 @@ import { ErrorSummary } from "./ErrorSummary";
 import { FieldControl, fieldDomId } from "./FieldControl";
 import { ReviewStep } from "./ReviewStep";
 
-export type SubmitOutcome = { ok: true } | { ok: false; message?: string; errors?: Record<string, string>; firstInvalidStepId?: string | null };
+export type SubmitOutcome =
+  | { ok: true }
+  | {
+      ok: false;
+      message?: string;
+      errors?: Record<string, string>;
+      firstInvalidStepId?: string | null;
+    };
 export type Progress = { stepId: string; furthestIndex: number };
 
 export type FormRunnerProps = {
@@ -44,7 +51,8 @@ export type FormRunnerProps = {
 
 function ruleDependencies(form: FormDefinition): string[] {
   const ids = new Set<string>();
-  const add = (c?: Condition) => c && ("all" in c ? c.all : c.any).forEach((cl) => ids.add(cl.fieldId));
+  const add = (c?: Condition) =>
+    c && ("all" in c ? c.all : c.any).forEach((cl) => ids.add(cl.fieldId));
   for (const s of form.steps) {
     add(s.visibleIf);
     s.fields.forEach((f) => add(f.visibleIf));
@@ -53,14 +61,29 @@ function ruleDependencies(form: FormDefinition): string[] {
 }
 
 export function FormRunner(props: FormRunnerProps) {
-  const { form, mode, initialAnswers, onSubmit, onProgress, onRestart, highlightFieldIds, statusSlot, footerSlot, className } = props;
+  const {
+    form,
+    mode,
+    initialAnswers,
+    onSubmit,
+    onProgress,
+    onRestart,
+    highlightFieldIds,
+    statusSlot,
+    footerSlot,
+    className,
+  } = props;
 
   // The resolver must see the latest form and step; RHF calls it on submit/re-validate.
   const latest = useRef({ form, stepId: "" });
 
   const resolver: Resolver<Answers> = (values, context, options) => {
     const { form: f, stepId } = latest.current;
-    return zodResolver(buildStepSchema(f, stepId, values))(values, context, options as never) as ReturnType<Resolver<Answers>>;
+    return zodResolver(buildStepSchema(f, stepId, values))(
+      values,
+      context,
+      options as never,
+    ) as ReturnType<Resolver<Answers>>;
   };
 
   const rhf = useForm<Answers>({
@@ -83,7 +106,9 @@ export function FormRunner(props: FormRunnerProps) {
   }, [form, deps, depValues]);
   const path = visibility.stepOrder;
 
-  const [uncontrolledStep, setUncontrolledStep] = useState(() => (props.initialStepId && path.includes(props.initialStepId) ? props.initialStepId : path[0]!));
+  const [uncontrolledStep, setUncontrolledStep] = useState(() =>
+    props.initialStepId && path.includes(props.initialStepId) ? props.initialStepId : path[0]!,
+  );
   const requested = props.stepId ?? uncontrolledStep;
   const stepId = path.includes(requested) ? requested : (path[0] ?? form.steps[0]!.id);
   const stepIndex = Math.max(0, path.indexOf(stepId));
@@ -120,7 +145,10 @@ export function FormRunner(props: FormRunnerProps) {
   useEffect(() => {
     if (!onProgress) return;
     // subscribe() listens to value changes without re-rendering this component.
-    return subscribe({ formState: { values: true }, callback: ({ values }) => onProgress(values, progressRef.current) });
+    return subscribe({
+      formState: { values: true },
+      callback: ({ values }) => onProgress(values, progressRef.current),
+    });
   }, [subscribe, onProgress]);
 
   // Move focus to the step heading on step change (not on first load: don't steal focus).
@@ -146,8 +174,11 @@ export function FormRunner(props: FormRunnerProps) {
     const answers = getValues();
     const check = validateSubmission(form, answers);
     if (!check.success) {
-      if (check.firstInvalidStepId && check.firstInvalidStepId !== stepId) goTo(check.firstInvalidStepId, "back");
-      Object.entries(check.errors).forEach(([id, message]) => setError(id, { type: "validate", message }));
+      if (check.firstInvalidStepId && check.firstInvalidStepId !== stepId)
+        goTo(check.firstInvalidStepId, "back");
+      Object.entries(check.errors).forEach(([id, message]) =>
+        setError(id, { type: "validate", message }),
+      );
       setFocusKey((k) => k + 1);
       return;
     }
@@ -159,9 +190,14 @@ export function FormRunner(props: FormRunnerProps) {
         setSubmitted(true);
         return;
       }
-      if (outcome.firstInvalidStepId && outcome.firstInvalidStepId !== stepId) goTo(outcome.firstInvalidStepId, "back");
-      Object.entries(outcome.errors ?? {}).forEach(([id, message]) => setError(id, { type: "server", message }));
-      setSubmitError(outcome.message ?? (outcome.errors ? null : "Couldn't submit. Please try again."));
+      if (outcome.firstInvalidStepId && outcome.firstInvalidStepId !== stepId)
+        goTo(outcome.firstInvalidStepId, "back");
+      Object.entries(outcome.errors ?? {}).forEach(([id, message]) =>
+        setError(id, { type: "server", message }),
+      );
+      setSubmitError(
+        outcome.message ?? (outcome.errors ? null : "Couldn't submit. Please try again."),
+      );
       setFocusKey((k) => k + 1);
     } catch {
       setSubmitError("Couldn't submit. Check your connection and try again.");
@@ -180,14 +216,21 @@ export function FormRunner(props: FormRunnerProps) {
 
   if (submitted) {
     return (
-      <Card className={cn("flex animate-enter flex-col items-center gap-3 py-12 text-center", className)}>
+      <Card
+        className={cn(
+          "flex animate-enter flex-col items-center gap-3 py-12 text-center",
+          className,
+        )}
+      >
         <span className="grid size-12 place-items-center rounded-full bg-success-soft text-success">
           <Icon name="check" className="size-6" />
         </span>
         <h2 className="text-xl font-semibold" tabIndex={-1} ref={(el) => el?.focus()}>
           {form.settings.confirmation.title}
         </h2>
-        {form.settings.confirmation.message ? <p className="max-w-md text-fg-muted">{form.settings.confirmation.message}</p> : null}
+        {form.settings.confirmation.message ? (
+          <p className="max-w-md text-fg-muted">{form.settings.confirmation.message}</p>
+        ) : null}
         {onRestart ? (
           <Button className="mt-2" onClick={onRestart}>
             {mode === "preview" ? "Restart preview" : "Submit another response"}
@@ -198,7 +241,12 @@ export function FormRunner(props: FormRunnerProps) {
   }
 
   return (
-    <form noValidate onSubmit={onNext} className={cn("flex flex-col gap-6", className)} aria-labelledby="step-heading">
+    <form
+      noValidate
+      onSubmit={onNext}
+      className={cn("flex flex-col gap-6", className)}
+      aria-labelledby="step-heading"
+    >
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3 text-sm text-fg-muted">
           <span>
@@ -206,12 +254,27 @@ export function FormRunner(props: FormRunnerProps) {
           </span>
           {statusSlot}
         </div>
-        <ProgressBar value={stepIndex + (submitted ? 1 : 0)} max={Math.max(1, path.length - 1)} label="Form progress" />
+        <ProgressBar
+          value={stepIndex + (submitted ? 1 : 0)}
+          max={Math.max(1, path.length - 1)}
+          label="Form progress"
+        />
       </div>
 
-      <div key={stepId} className={cn("flex flex-col gap-6", direction === "forward" ? "animate-enter" : "animate-enter-back")}>
+      <div
+        key={stepId}
+        className={cn(
+          "flex flex-col gap-6",
+          direction === "forward" ? "animate-enter" : "animate-enter-back",
+        )}
+      >
         <div className="flex flex-col gap-1">
-          <h2 id="step-heading" ref={headingRef} tabIndex={-1} className="text-xl font-semibold tracking-tight focus-visible:outline-offset-4">
+          <h2
+            id="step-heading"
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-xl font-semibold tracking-tight focus-visible:outline-offset-4"
+          >
             <span className="sr-only">
               Step {stepIndex + 1} of {path.length}:{" "}
             </span>
@@ -234,13 +297,20 @@ export function FormRunner(props: FormRunnerProps) {
             visibility={computeVisibility(form, getValues())}
             onEdit={(sid, fid) => {
               goTo(sid, "back");
-              requestAnimationFrame(() => document.getElementById(fieldDomId(fid))?.scrollIntoView({ block: "center" }));
+              requestAnimationFrame(() =>
+                document.getElementById(fieldDomId(fid))?.scrollIntoView({ block: "center" }),
+              );
             }}
           />
         ) : stepFields.length ? (
           <div className="flex flex-col gap-6">
             {stepFields.map((f) => (
-              <FieldControl key={f.id} field={f} control={control} highlighted={highlightFieldIds?.has(f.id)} />
+              <FieldControl
+                key={f.id}
+                field={f}
+                control={control}
+                highlighted={highlightFieldIds?.has(f.id)}
+              />
             ))}
           </div>
         ) : (
@@ -250,7 +320,10 @@ export function FormRunner(props: FormRunnerProps) {
 
       <div className="flex flex-col-reverse gap-3 border-t border-line pt-4 sm:flex-row sm:items-center">
         {stepIndex > 0 ? (
-          <Button onClick={() => goTo(path[stepIndex - 1]!, "back")} leadingIcon={<Icon name="chevronLeft" />}>
+          <Button
+            onClick={() => goTo(path[stepIndex - 1]!, "back")}
+            leadingIcon={<Icon name="chevronLeft" />}
+          >
             Back
           </Button>
         ) : null}

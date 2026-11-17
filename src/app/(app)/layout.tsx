@@ -11,7 +11,10 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
     <>
       <SiteHeader>
         <nav aria-label="Main" className="mr-2">
-          <Link href="/forms" className="rounded-control px-2 py-1 text-sm font-medium text-fg-muted hover:text-fg">
+          <Link
+            href="/forms"
+            className="rounded-control px-2 py-1 text-sm font-medium text-fg-muted hover:text-fg"
+          >
             My forms
           </Link>
         </nav>

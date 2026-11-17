@@ -26,6 +26,8 @@ export function migrateToCurrent(raw: unknown): unknown {
   return doc;
 }
 
-export function loadForm(raw: unknown): { ok: true; form: FormDefinition; issues: FormIssue[] } | { ok: false; issues: FormIssue[] } {
+export function loadForm(
+  raw: unknown,
+): { ok: true; form: FormDefinition; issues: FormIssue[] } | { ok: false; issues: FormIssue[] } {
   return validateForm(migrateToCurrent(raw));
 }

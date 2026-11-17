@@ -22,7 +22,15 @@ describe("answerSchema per type", () => {
   });
 
   it("text length and pattern", () => {
-    const f: Field = { id: "a", type: "shortText", label: "A", required: true, minLength: 3, maxLength: 5, pattern: { regex: "^[a-z]+$", message: "Lowercase only" } };
+    const f: Field = {
+      id: "a",
+      type: "shortText",
+      label: "A",
+      required: true,
+      minLength: 3,
+      maxLength: 5,
+      pattern: { regex: "^[a-z]+$", message: "Lowercase only" },
+    };
     expect(ok(f, "ab")).toBe(false);
     expect(ok(f, "abcdef")).toBe(false);
     expect(msg(f, "ABC")).toBe("Lowercase only");
@@ -44,7 +52,15 @@ describe("answerSchema per type", () => {
   });
 
   it("number and rating coerce from input strings", () => {
-    const n: Field = { id: "n", type: "number", label: "N", required: true, min: 0, max: 60, integer: true };
+    const n: Field = {
+      id: "n",
+      type: "number",
+      label: "N",
+      required: true,
+      min: 0,
+      max: 60,
+      integer: true,
+    };
     expect(out(n, "12")).toBe(12);
     expect(msg(n, "1.5")).toBe(MESSAGES.integer);
     expect(ok(n, "61")).toBe(false);
@@ -57,17 +73,41 @@ describe("answerSchema per type", () => {
   });
 
   it("date bounds", () => {
-    const d: Field = { id: "d", type: "date", label: "D", required: true, minDate: "2026-01-01", maxDate: "2026-12-31" };
+    const d: Field = {
+      id: "d",
+      type: "date",
+      label: "D",
+      required: true,
+      minDate: "2026-01-01",
+      maxDate: "2026-12-31",
+    };
     expect(ok(d, "2026-05-05")).toBe(true);
     expect(ok(d, "2025-12-31")).toBe(false);
     expect(ok(d, "2026-02-30")).toBe(false);
   });
 
   it("choices only accept known option ids", () => {
-    const s: Field = { id: "s", type: "singleChoice", label: "S", required: true, options: [{ id: "o_a", label: "A" }] };
+    const s: Field = {
+      id: "s",
+      type: "singleChoice",
+      label: "S",
+      required: true,
+      options: [{ id: "o_a", label: "A" }],
+    };
     expect(ok(s, "o_a")).toBe(true);
     expect(ok(s, "A")).toBe(false);
-    const m: Field = { id: "m", type: "multipleChoice", label: "M", required: true, maxSelected: 2, options: [{ id: "o_a", label: "A" }, { id: "o_b", label: "B" }, { id: "o_c", label: "C" }] };
+    const m: Field = {
+      id: "m",
+      type: "multipleChoice",
+      label: "M",
+      required: true,
+      maxSelected: 2,
+      options: [
+        { id: "o_a", label: "A" },
+        { id: "o_b", label: "B" },
+        { id: "o_c", label: "C" },
+      ],
+    };
     expect(msg(m, [])).toBe(MESSAGES.required);
     expect(out(m, ["o_a", "o_a"])).toEqual(["o_a"]);
     expect(ok(m, ["o_a", "o_b", "o_c"])).toBe(false);
@@ -115,7 +155,13 @@ describe("step and submission validation", () => {
     });
     expect(r).toEqual({
       success: true,
-      data: { f_name: "Ada", f_email: "ada@example.com", f_resume: "https://ada.dev", f_role: "o_mid", f_years: 8 },
+      data: {
+        f_name: "Ada",
+        f_email: "ada@example.com",
+        f_resume: "https://ada.dev",
+        f_role: "o_mid",
+        f_years: 8,
+      },
     });
   });
 
@@ -124,6 +170,7 @@ describe("step and submission validation", () => {
     expect(validateSubmission(fb, { f_rating: 4, f_contact_ok: false }).success).toBe(true);
     const low = validateSubmission(fb, { f_rating: 1, f_contact_ok: true });
     expect(low.success).toBe(false);
-    if (!low.success) expect(Object.keys(low.errors).sort()).toEqual(["f_contact_email", "f_low_reason"]);
+    if (!low.success)
+      expect(Object.keys(low.errors).sort()).toEqual(["f_contact_email", "f_low_reason"]);
   });
 });

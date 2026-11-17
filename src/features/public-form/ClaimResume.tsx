@@ -38,7 +38,10 @@ export function ClaimResume({ slug, token }: { slug: string; token: string }) {
   return (
     <Card className="flex flex-col items-center gap-3 py-10 text-center">
       <h1 className="text-lg font-semibold">This link can&apos;t be used</h1>
-      <p className="max-w-sm text-sm text-fg-muted">Resume links work once and expire after 30 days. If you already opened it on another device, continue there.</p>
+      <p className="max-w-sm text-sm text-fg-muted">
+        Resume links work once and expire after 30 days. If you already opened it on another device,
+        continue there.
+      </p>
       <Link href={`/f/${slug}`} className={buttonClasses({ variant: "primary" })}>
         Start the form
       </Link>

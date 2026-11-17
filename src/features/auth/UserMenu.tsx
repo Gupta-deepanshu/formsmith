@@ -20,7 +20,10 @@ export function UserMenu({ name, email }: { name?: string; email?: string }) {
 
   return (
     <details className="relative [&_summary::-webkit-details-marker]:hidden">
-      <summary className="grid size-8 cursor-pointer list-none place-items-center rounded-full bg-accent-soft text-sm font-semibold text-accent-strong" aria-label="Account menu">
+      <summary
+        className="grid size-8 cursor-pointer list-none place-items-center rounded-full bg-accent-soft text-sm font-semibold text-accent-strong"
+        aria-label="Account menu"
+      >
         {initial}
       </summary>
       <div className="absolute right-0 z-20 mt-2 w-60 animate-fade rounded-card border border-line bg-surface p-3 shadow-card">

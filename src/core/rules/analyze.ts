@@ -21,28 +21,54 @@ function clausesOf(cond: Condition | undefined): Clause[] {
   return "all" in cond ? cond.all : cond.any;
 }
 
-function checkClause(clause: Clause, field: Field | undefined, owner: Owner, path: (string | number)[], issues: FormIssue[]) {
+function checkClause(
+  clause: Clause,
+  field: Field | undefined,
+  owner: Owner,
+  path: (string | number)[],
+  issues: FormIssue[],
+) {
   const push = (code: FormIssue["code"], message: string) =>
     issues.push({ severity: "error", code, message, targetId: owner.id, path });
 
-  if (!field) return push("rule.unknownField", `"${owner.label}" has a rule that refers to a question that no longer exists.`);
+  if (!field)
+    return push(
+      "rule.unknownField",
+      `"${owner.label}" has a rule that refers to a question that no longer exists.`,
+    );
   const meta = FIELD_TYPE_META[field.type];
   if (!meta.operators.includes(clause.op)) {
-    return push("rule.badOperator", `"${owner.label}": "${clause.op}" can't be used with ${meta.label.toLowerCase()} questions.`);
+    return push(
+      "rule.badOperator",
+      `"${owner.label}": "${clause.op}" can't be used with ${meta.label.toLowerCase()} questions.`,
+    );
   }
   if (clause.op === "isAnswered" || clause.op === "isEmpty") return;
   const v = clause.value;
-  if (v === undefined || (typeof v === "string" && v.trim() === "") || (Array.isArray(v) && v.length === 0)) {
-    return push("rule.missingValue", `"${owner.label}": the rule on "${field.label}" needs a value.`);
+  if (
+    v === undefined ||
+    (typeof v === "string" && v.trim() === "") ||
+    (Array.isArray(v) && v.length === 0)
+  ) {
+    return push(
+      "rule.missingValue",
+      `"${owner.label}": the rule on "${field.label}" needs a value.`,
+    );
   }
   if (isChoiceField(field)) {
     const ids = new Set(field.options.map((o) => o.id));
     const values = Array.isArray(v) ? v : [String(v)];
     if (values.some((x) => !ids.has(x))) {
-      push("rule.unknownOption", `"${owner.label}": the rule on "${field.label}" uses an option that no longer exists.`);
+      push(
+        "rule.unknownOption",
+        `"${owner.label}": the rule on "${field.label}" uses an option that no longer exists.`,
+      );
     }
   }
-  if ((meta.answerKind === "number") && (Array.isArray(v) || typeof v === "boolean" || !Number.isFinite(Number(v)))) {
+  if (
+    meta.answerKind === "number" &&
+    (Array.isArray(v) || typeof v === "boolean" || !Number.isFinite(Number(v)))
+  ) {
     push("rule.badValue", `"${owner.label}": the rule on "${field.label}" needs a number.`);
   }
 }
@@ -66,32 +92,58 @@ export function analyzeRules(form: FormDefinition): FormIssue[] {
     labels.set(step.id, step.title);
     const stepOwner: Owner = { kind: "step", id: step.id, label: step.title, path: ["steps", si] };
     const stepRefs = clausesOf(step.visibleIf);
-    deps.set(step.id, stepRefs.map((c) => c.fieldId));
+    deps.set(
+      step.id,
+      stepRefs.map((c) => c.fieldId),
+    );
     stepRefs.forEach((c, ci) => {
       const path = ["steps", si, "visibleIf", ci];
       checkClause(c, fieldsById.get(c.fieldId), stepOwner, path, issues);
       const pos = position.get(c.fieldId);
       if (pos && pos.stepIndex >= si) {
-        issues.push({ severity: "error", code: "rule.forwardRef", targetId: step.id, path, message: `Step "${step.title}" can only depend on questions in earlier steps.` });
+        issues.push({
+          severity: "error",
+          code: "rule.forwardRef",
+          targetId: step.id,
+          path,
+          message: `Step "${step.title}" can only depend on questions in earlier steps.`,
+        });
       }
     });
 
     step.fields.forEach((field, fi) => {
       labels.set(field.id, field.label);
-      const owner: Owner = { kind: "field", id: field.id, label: field.label, path: ["steps", si, "fields", fi] };
+      const owner: Owner = {
+        kind: "field",
+        id: field.id,
+        label: field.label,
+        path: ["steps", si, "fields", fi],
+      };
       const refs = clausesOf(field.visibleIf);
       // A field also depends on its step's condition, so step rules join the graph too.
       deps.set(field.id, [...refs.map((c) => c.fieldId), step.id]);
       refs.forEach((c, ci) => {
         const path = ["steps", si, "fields", fi, "visibleIf", ci];
         if (c.fieldId === field.id) {
-          issues.push({ severity: "error", code: "rule.selfRef", targetId: field.id, path, message: `"${field.label}" can't depend on itself.` });
+          issues.push({
+            severity: "error",
+            code: "rule.selfRef",
+            targetId: field.id,
+            path,
+            message: `"${field.label}" can't depend on itself.`,
+          });
           return;
         }
         checkClause(c, fieldsById.get(c.fieldId), owner, path, issues);
         const pos = position.get(c.fieldId);
         if (pos && (pos.stepIndex > si || (pos.stepIndex === si && pos.fieldIndex > fi))) {
-          issues.push({ severity: "error", code: "rule.forwardRef", targetId: field.id, path, message: `"${field.label}" depends on "${fieldsById.get(c.fieldId)?.label}", which comes after it. Move it earlier or change the rule.` });
+          issues.push({
+            severity: "error",
+            code: "rule.forwardRef",
+            targetId: field.id,
+            path,
+            message: `"${field.label}" depends on "${fieldsById.get(c.fieldId)?.label}", which comes after it. Move it earlier or change the rule.`,
+          });
         }
       });
     });
@@ -99,14 +151,22 @@ export function analyzeRules(form: FormDefinition): FormIssue[] {
 
   for (const cycle of findCycles(deps)) {
     const names = cycle.map((id) => `"${labels.get(id) ?? id}"`).join(" → ");
-    issues.push({ severity: "error", code: "rule.cycle", targetId: cycle[0]!, path: [], message: `Circular rule: ${names}.` });
+    issues.push({
+      severity: "error",
+      code: "rule.cycle",
+      targetId: cycle[0]!,
+      path: [],
+      message: `Circular rule: ${names}.`,
+    });
   }
   return issues;
 }
 
 /** DFS with white/grey/black colouring (depth is bounded by form size limits). Returns each distinct cycle once, as a closed path. */
 export function findCycles(graph: ReadonlyMap<string, readonly string[]>): string[][] {
-  const WHITE = 0, GREY = 1, BLACK = 2;
+  const WHITE = 0,
+    GREY = 1,
+    BLACK = 2;
   const colour = new Map<string, number>();
   const stack: string[] = [];
   const cycles: string[][] = [];

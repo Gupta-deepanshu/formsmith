@@ -17,7 +17,11 @@ const sizes: Record<ButtonSize, string> = {
   lg: "h-12 px-5 text-base gap-2",
 };
 
-export function buttonClasses({ variant = "secondary", size = "md", className }: { variant?: ButtonVariant; size?: ButtonSize; className?: string } = {}) {
+export function buttonClasses({
+  variant = "secondary",
+  size = "md",
+  className,
+}: { variant?: ButtonVariant; size?: ButtonSize; className?: string } = {}) {
   return cn(
     "inline-flex select-none items-center justify-center rounded-control font-medium whitespace-nowrap transition-colors duration-150",
     "disabled:pointer-events-none disabled:opacity-50",
@@ -35,9 +39,25 @@ export type ButtonProps = ComponentProps<"button"> & {
   leadingIcon?: ReactNode;
 };
 
-export function Button({ variant, size, loading = false, leadingIcon, className, children, disabled, type = "button", ...props }: ButtonProps) {
+export function Button({
+  variant,
+  size,
+  loading = false,
+  leadingIcon,
+  className,
+  children,
+  disabled,
+  type = "button",
+  ...props
+}: ButtonProps) {
   return (
-    <button type={type} className={buttonClasses({ variant, size, className })} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
+    <button
+      type={type}
+      className={buttonClasses({ variant, size, className })}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}
+    >
       {loading ? <Spinner size="sm" /> : leadingIcon}
       {children}
     </button>
@@ -53,7 +73,13 @@ export type IconButtonProps = Omit<ButtonProps, "children" | "leadingIcon"> & {
 export function IconButton({ label, icon, size = "md", className, ...props }: IconButtonProps) {
   const square = size === "sm" ? "w-8 px-0" : size === "lg" ? "w-12 px-0" : "w-10 px-0";
   return (
-    <Button aria-label={label} title={label} size={size} className={cn(square, className)} {...props}>
+    <Button
+      aria-label={label}
+      title={label}
+      size={size}
+      className={cn(square, className)}
+      {...props}
+    >
       {icon}
     </Button>
   );

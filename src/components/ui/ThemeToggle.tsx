@@ -24,7 +24,8 @@ function apply(theme: Theme) {
   } catch {
     // storage blocked: theme still applies for this page view
   }
-  const dark = theme === "dark" || (theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+  const dark =
+    theme === "dark" || (theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.classList.toggle("dark", dark);
   listeners.forEach((l) => l());
 }
@@ -52,7 +53,11 @@ const OPTIONS: { value: Theme; label: string; icon: "monitor" | "sun" | "moon" }
 export function ThemeToggle({ className }: { className?: string }) {
   const theme = useSyncExternalStore(subscribe, read, () => "system" as Theme);
   return (
-    <div role="radiogroup" aria-label="Colour theme" className={cn("inline-flex rounded-control border border-line bg-surface p-0.5", className)}>
+    <div
+      role="radiogroup"
+      aria-label="Colour theme"
+      className={cn("inline-flex rounded-control border border-line bg-surface p-0.5", className)}
+    >
       {OPTIONS.map((o) => (
         <button
           key={o.value}
@@ -62,7 +67,10 @@ export function ThemeToggle({ className }: { className?: string }) {
           aria-label={o.label}
           title={o.label}
           onClick={() => apply(o.value)}
-          className={cn("rounded-[calc(var(--radius-control)-2px)] p-1.5 text-fg-muted transition-colors duration-150", theme === o.value ? "bg-subtle text-fg" : "hover:text-fg")}
+          className={cn(
+            "rounded-[calc(var(--radius-control)-2px)] p-1.5 text-fg-muted transition-colors duration-150",
+            theme === o.value ? "bg-subtle text-fg" : "hover:text-fg",
+          )}
         >
           <Icon name={o.icon} />
         </button>

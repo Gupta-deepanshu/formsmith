@@ -4,30 +4,62 @@ import { loadForm } from "../schema/migrate";
 import { normaliseFieldShape, newField } from "../schema/fieldTypes";
 import { createId, toIdLike } from "../schema/ids";
 import { FieldSchema, type FormDefinition } from "../schema/definition";
-import { computeVisibility, evaluateClause, indexFields, pruneHiddenAnswers } from "../rules/engine";
+import {
+  computeVisibility,
+  evaluateClause,
+  indexFields,
+  pruneHiddenAnswers,
+} from "../rules/engine";
 import { analyzeRules, findCycles } from "../rules/analyze";
 import { TEMPLATES, closestTemplate, feedbackForm, jobApplicationForm } from "../templates";
 
 const clone = <T>(v: T): T => structuredClone(v);
 
 describe("schema", () => {
-  it.each(TEMPLATES.map((t) => [t.key, t.build] as const))("template %s is valid with no errors", (_key, build) => {
-    const r = validateForm(build());
-    expect(r.ok).toBe(true);
-    expect(r.issues.filter((i) => i.severity === "error")).toEqual([]);
-  });
+  it.each(TEMPLATES.map((t) => [t.key, t.build] as const))(
+    "template %s is valid with no errors",
+    (_key, build) => {
+      const r = validateForm(build());
+      expect(r.ok).toBe(true);
+      expect(r.issues.filter((i) => i.severity === "error")).toEqual([]);
+    },
+  );
 
   it("rejects type-inappropriate options thanks to the discriminated union", () => {
-    expect(FieldSchema.safeParse({ id: "f_a", type: "email", label: "E", required: true, min: 3 }).success).toBe(true); // unknown keys are stripped...
-    const parsed = FieldSchema.parse({ id: "f_a", type: "email", label: "E", required: true, min: 3 });
+    expect(
+      FieldSchema.safeParse({ id: "f_a", type: "email", label: "E", required: true, min: 3 })
+        .success,
+    ).toBe(true); // unknown keys are stripped...
+    const parsed = FieldSchema.parse({
+      id: "f_a",
+      type: "email",
+      label: "E",
+      required: true,
+      min: 3,
+    });
     expect("min" in parsed).toBe(false); // ...not carried through
-    expect(FieldSchema.safeParse({ id: "f_a", type: "dropdown", label: "D", required: true }).success).toBe(false);
+    expect(
+      FieldSchema.safeParse({ id: "f_a", type: "dropdown", label: "D", required: true }).success,
+    ).toBe(false);
   });
 
   it("flags inconsistent validation options", () => {
-    const r = FieldSchema.safeParse({ id: "f_a", type: "number", label: "N", required: false, min: 10, max: 1 });
+    const r = FieldSchema.safeParse({
+      id: "f_a",
+      type: "number",
+      label: "N",
+      required: false,
+      min: 10,
+      max: 1,
+    });
     expect(r.success).toBe(false);
-    const bad = FieldSchema.safeParse({ id: "f_a", type: "shortText", label: "T", required: false, pattern: { regex: "(", message: "x" } });
+    const bad = FieldSchema.safeParse({
+      id: "f_a",
+      type: "shortText",
+      label: "T",
+      required: false,
+      pattern: { regex: "(", message: "x" },
+    });
     expect(bad.success).toBe(false);
   });
 
@@ -44,7 +76,9 @@ describe("schema", () => {
   });
 
   it("schema errors carry the target id for editor highlighting", () => {
-    const f = clone(jobApplicationForm()) as unknown as { steps: { fields: { label: string }[] }[] };
+    const f = clone(jobApplicationForm()) as unknown as {
+      steps: { fields: { label: string }[] }[];
+    };
     f.steps[0]!.fields[1]!.label = "";
     const r = validateForm(f);
     expect(r.ok).toBe(false);
@@ -98,8 +132,20 @@ describe("rule engine", () => {
           kind: "questions",
           fields: [
             { id: "a", type: "yesNo", label: "A", required: false },
-            { id: "b", type: "shortText", label: "B", required: false, visibleIf: { all: [{ fieldId: "a", op: "equals", value: true }] } },
-            { id: "c", type: "shortText", label: "C", required: false, visibleIf: { all: [{ fieldId: "b", op: "isAnswered" }] } },
+            {
+              id: "b",
+              type: "shortText",
+              label: "B",
+              required: false,
+              visibleIf: { all: [{ fieldId: "a", op: "equals", value: true }] },
+            },
+            {
+              id: "c",
+              type: "shortText",
+              label: "C",
+              required: false,
+              visibleIf: { all: [{ fieldId: "b", op: "isAnswered" }] },
+            },
           ],
         },
       ],
@@ -113,17 +159,45 @@ describe("rule engine", () => {
   it("operator semantics", () => {
     const fb = feedbackForm();
     const idx = indexFields(fb);
-    expect(evaluateClause({ fieldId: "f_rating", op: "lte", value: 2 }, { f_rating: 2 }, idx)).toBe(true);
-    expect(evaluateClause({ fieldId: "f_rating", op: "gt", value: 2 }, { f_rating: 2 }, idx)).toBe(false);
-    expect(evaluateClause({ fieldId: "f_used", op: "contains", value: "o_ai" }, { f_used: ["o_ai"] }, idx)).toBe(true);
-    expect(evaluateClause({ fieldId: "f_used", op: "notIn", value: ["o_ai", "o_export"] }, { f_used: ["o_builder"] }, idx)).toBe(true);
-    expect(evaluateClause({ fieldId: "f_name", op: "equals", value: "ada" }, { f_name: "  Ada " }, fields)).toBe(true);
-    expect(evaluateClause({ fieldId: "f_name", op: "contains", value: "DA" }, { f_name: "Ada" }, fields)).toBe(true);
+    expect(evaluateClause({ fieldId: "f_rating", op: "lte", value: 2 }, { f_rating: 2 }, idx)).toBe(
+      true,
+    );
+    expect(evaluateClause({ fieldId: "f_rating", op: "gt", value: 2 }, { f_rating: 2 }, idx)).toBe(
+      false,
+    );
+    expect(
+      evaluateClause(
+        { fieldId: "f_used", op: "contains", value: "o_ai" },
+        { f_used: ["o_ai"] },
+        idx,
+      ),
+    ).toBe(true);
+    expect(
+      evaluateClause(
+        { fieldId: "f_used", op: "notIn", value: ["o_ai", "o_export"] },
+        { f_used: ["o_builder"] },
+        idx,
+      ),
+    ).toBe(true);
+    expect(
+      evaluateClause(
+        { fieldId: "f_name", op: "equals", value: "ada" },
+        { f_name: "  Ada " },
+        fields,
+      ),
+    ).toBe(true);
+    expect(
+      evaluateClause({ fieldId: "f_name", op: "contains", value: "DA" }, { f_name: "Ada" }, fields),
+    ).toBe(true);
     // Unanswered: comparisons are false, even negative ones.
-    expect(evaluateClause({ fieldId: "f_role", op: "notEquals", value: "o_junior" }, {}, fields)).toBe(false);
+    expect(
+      evaluateClause({ fieldId: "f_role", op: "notEquals", value: "o_junior" }, {}, fields),
+    ).toBe(false);
     expect(evaluateClause({ fieldId: "f_role", op: "isEmpty" }, { f_role: "" }, fields)).toBe(true);
     // Unknown field: false rather than throwing.
-    expect(evaluateClause({ fieldId: "f_nope", op: "equals", value: "x" }, { f_nope: "x" }, fields)).toBe(false);
+    expect(
+      evaluateClause({ fieldId: "f_nope", op: "equals", value: "x" }, { f_nope: "x" }, fields),
+    ).toBe(false);
   });
 
   it("dates compare chronologically", () => {
@@ -145,7 +219,13 @@ function eventFormWithDateRule(): FormDefinition {
         kind: "questions",
         fields: [
           { id: "f_date", type: "date", label: "Date", required: false },
-          { id: "f_late", type: "shortText", label: "Late", required: false, visibleIf: { all: [{ fieldId: "f_date", op: "gt", value: "2026-06-01" }] } },
+          {
+            id: "f_late",
+            type: "shortText",
+            label: "Late",
+            required: false,
+            visibleIf: { all: [{ fieldId: "f_date", op: "gt", value: "2026-06-01" }] },
+          },
         ],
       },
     ],
@@ -193,7 +273,14 @@ describe("rule analysis", () => {
       ],
     };
     const codes = analyzeRules(f).map((i) => i.code);
-    expect(codes).toEqual(expect.arrayContaining(["rule.selfRef", "rule.badOperator", "rule.missingValue", "rule.unknownOption"]));
+    expect(codes).toEqual(
+      expect.arrayContaining([
+        "rule.selfRef",
+        "rule.badOperator",
+        "rule.missingValue",
+        "rule.unknownOption",
+      ]),
+    );
   });
 
   it("findCycles returns each cycle once", () => {

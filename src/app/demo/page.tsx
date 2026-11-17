@@ -9,7 +9,10 @@ import { loadForm, type Answers, type ResponseRecord } from "@/core";
 import { DemoSummary } from "@/features/responses/DemoSummary";
 import { publicEnv } from "@/lib/env";
 
-export const metadata: Metadata = { title: "Demo results", description: "Live, anonymous totals for the Formsmith demo form." };
+export const metadata: Metadata = {
+  title: "Demo results",
+  description: "Live, anonymous totals for the Formsmith demo form.",
+};
 
 export default function DemoPage() {
   return (
@@ -19,7 +22,10 @@ export default function DemoPage() {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Demo results</h1>
-            <p className="text-fg-muted">Anonymous totals from everyone who filled in the demo form. Free-text answers are never shown.</p>
+            <p className="text-fg-muted">
+              Anonymous totals from everyone who filled in the demo form. Free-text answers are
+              never shown.
+            </p>
           </div>
           <Link href="/f/demo" className={buttonClasses({ variant: "primary" })}>
             Fill in the demo form
@@ -39,7 +45,17 @@ async function DemoData() {
   return <DemoSummary form={data.form} responses={data.responses} />;
 }
 
-type DemoPayload = { versionId: string | null; schema: unknown; responses: { status: "draft" | "submitted"; furthest_step_index: number; started_at: string; submitted_at: string | null; answers: Answers }[] };
+type DemoPayload = {
+  versionId: string | null;
+  schema: unknown;
+  responses: {
+    status: "draft" | "submitted";
+    furthest_step_index: number;
+    started_at: string;
+    submitted_at: string | null;
+    answers: Answers;
+  }[];
+};
 
 /**
  * Public, identical for every visitor, so it's cached (Cache Components) and refreshed
@@ -50,7 +66,9 @@ async function getDemoStats() {
   "use cache";
   cacheLife("minutes");
   if (!publicEnv.supabaseUrl || !publicEnv.supabasePublishableKey) return null;
-  const supabase = createClient(publicEnv.supabaseUrl, publicEnv.supabasePublishableKey, { auth: { persistSession: false } });
+  const supabase = createClient(publicEnv.supabaseUrl, publicEnv.supabasePublishableKey, {
+    auth: { persistSession: false },
+  });
   const { data } = await supabase.rpc("get_demo_responses");
   const payload = data as DemoPayload | null;
   if (!payload?.versionId) return null;

@@ -34,7 +34,11 @@ export function SandboxEditor() {
 
   if (!initial) {
     return (
-      <div className="mx-auto grid w-full max-w-[1600px] gap-6 p-4 lg:grid-cols-[300px_1fr_340px]" aria-busy="true" aria-label="Loading editor">
+      <div
+        className="mx-auto grid w-full max-w-[1600px] gap-6 p-4 lg:grid-cols-[300px_1fr_340px]"
+        aria-busy="true"
+        aria-label="Loading editor"
+      >
         <Skeleton className="h-96" />
         <Skeleton className="h-[32rem]" />
         <Skeleton className="h-96" />
@@ -55,13 +59,23 @@ export function SandboxEditor() {
             replace(jobApplicationForm());
           },
           extraActions: (
-            <Button size="sm" onClick={() => setGenerating(true)} leadingIcon={<Icon name="sparkle" />}>
+            <Button
+              size="sm"
+              onClick={() => setGenerating(true)}
+              leadingIcon={<Icon name="sparkle" />}
+            >
               Generate with AI
             </Button>
           ),
         }}
       />
-      <Dialog open={generating} onClose={() => setGenerating(false)} size="lg" title="Generate a form with AI" description="Replaces the sandbox form. The sandbox allows 3 AI requests in total.">
+      <Dialog
+        open={generating}
+        onClose={() => setGenerating(false)}
+        size="lg"
+        title="Generate a form with AI"
+        description="Replaces the sandbox form. The sandbox allows 3 AI requests in total."
+      >
         {generating ? <GenerateForm sandbox onUse={replace} /> : null}
       </Dialog>
     </>

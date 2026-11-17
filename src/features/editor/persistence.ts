@@ -26,7 +26,8 @@ export const supabasePersistence = (formId: string): DraftPersistence => ({
 export const localPersistence: DraftPersistence = {
   kind: "local",
   save: async (form) => {
-    if (!writeSandbox(form)) throw new Error("Your browser blocked local storage, so changes won't survive a refresh.");
+    if (!writeSandbox(form))
+      throw new Error("Your browser blocked local storage, so changes won't survive a refresh.");
     return { savedAt: new Date().toISOString() };
   },
 };
@@ -48,7 +49,10 @@ export function useAutosave(persistence: DraftPersistence) {
       const s = store.getState();
       if (inFlight.current || s.revision === s.savedRevision) return;
       if (typeof navigator !== "undefined" && !navigator.onLine) {
-        s.actions.markSaveFailed("offline", "You're offline. Changes will save when you reconnect.");
+        s.actions.markSaveFailed(
+          "offline",
+          "You're offline. Changes will save when you reconnect.",
+        );
         return;
       }
       inFlight.current = true;
@@ -58,7 +62,9 @@ export function useAutosave(persistence: DraftPersistence) {
         const { savedAt } = await persistence.save(selectFormDefinition(s));
         store.getState().actions.markSaved(revision, savedAt);
       } catch (e) {
-        store.getState().actions.markSaveFailed(navigator.onLine ? "error" : "offline", (e as Error).message);
+        store
+          .getState()
+          .actions.markSaveFailed(navigator.onLine ? "error" : "offline", (e as Error).message);
       } finally {
         inFlight.current = false;
         // Changes made while saving: save again.

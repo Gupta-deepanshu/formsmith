@@ -35,7 +35,8 @@ export function SandboxImport({ onImported }: { onImported: (id: string) => void
   return (
     <Card className="mb-4 flex flex-col gap-3 border-accent bg-accent-soft sm:flex-row sm:items-center">
       <p className="flex-1 text-sm">
-        You have a form from the sandbox editor: <strong>{form.title}</strong>. Save it to your account?
+        You have a form from the sandbox editor: <strong>{form.title}</strong>. Save it to your
+        account?
       </p>
       <div className="flex gap-2">
         <Button

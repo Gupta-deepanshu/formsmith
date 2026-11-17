@@ -30,7 +30,12 @@ export async function createClient() {
   });
 }
 
-export type Claims = { sub: string; is_anonymous?: boolean; email?: string; user_metadata?: { full_name?: string; name?: string; avatar_url?: string } };
+export type Claims = {
+  sub: string;
+  is_anonymous?: boolean;
+  email?: string;
+  user_metadata?: { full_name?: string; name?: string; avatar_url?: string };
+};
 
 /**
  * Verified claims of the current user, or null. getClaims() checks the JWT signature

@@ -29,7 +29,8 @@ import { validateForm } from "../schema/validateForm";
 
 type Rec = Record<string, unknown>;
 const isRec = (v: unknown): v is Rec => typeof v === "object" && v !== null && !Array.isArray(v);
-const str = (v: unknown, max: number): string | undefined => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined);
+const str = (v: unknown, max: number): string | undefined =>
+  typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined;
 const num = (v: unknown): number | undefined => {
   const n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
   return Number.isFinite(n) ? n : undefined;
@@ -37,18 +38,49 @@ const num = (v: unknown): number | undefined => {
 const lc = (s: string) => s.trim().toLowerCase();
 
 const TYPE_ALIASES: Record<string, FieldType> = {
-  text: "shortText", short_text: "shortText", shorttext: "shortText", string: "shortText", name: "shortText",
-  textarea: "longText", long_text: "longText", longtext: "longText", paragraph: "longText", essay: "longText",
-  mail: "email", "e-mail": "email",
-  tel: "phone", telephone: "phone", mobile: "phone",
-  integer: "number", numeric: "number", int: "number", decimal: "number",
-  radio: "singleChoice", single_choice: "singleChoice", singlechoice: "singleChoice", choice: "singleChoice",
-  checkbox: "multipleChoice", checkboxes: "multipleChoice", multiple_choice: "multipleChoice", multiplechoice: "multipleChoice", multiselect: "multipleChoice",
-  select: "dropdown", dropdown: "dropdown",
-  link: "url", website: "url", uri: "url",
-  scale: "rating", stars: "rating", star: "rating",
-  boolean: "yesNo", yes_no: "yesNo", yesno: "yesNo", bool: "yesNo", confirm: "yesNo",
-  datetime: "date", calendar: "date",
+  text: "shortText",
+  short_text: "shortText",
+  shorttext: "shortText",
+  string: "shortText",
+  name: "shortText",
+  textarea: "longText",
+  long_text: "longText",
+  longtext: "longText",
+  paragraph: "longText",
+  essay: "longText",
+  mail: "email",
+  "e-mail": "email",
+  tel: "phone",
+  telephone: "phone",
+  mobile: "phone",
+  integer: "number",
+  numeric: "number",
+  int: "number",
+  decimal: "number",
+  radio: "singleChoice",
+  single_choice: "singleChoice",
+  singlechoice: "singleChoice",
+  choice: "singleChoice",
+  checkbox: "multipleChoice",
+  checkboxes: "multipleChoice",
+  multiple_choice: "multipleChoice",
+  multiplechoice: "multipleChoice",
+  multiselect: "multipleChoice",
+  select: "dropdown",
+  dropdown: "dropdown",
+  link: "url",
+  website: "url",
+  uri: "url",
+  scale: "rating",
+  stars: "rating",
+  star: "rating",
+  boolean: "yesNo",
+  yes_no: "yesNo",
+  yesno: "yesNo",
+  bool: "yesNo",
+  confirm: "yesNo",
+  datetime: "date",
+  calendar: "date",
 };
 
 export function resolveFieldType(raw: unknown): FieldType | null {
@@ -64,7 +96,10 @@ export class IdAllocator {
     for (const id of existing) this.used.add(id);
   }
   take(preferred: string | undefined, fallbackSeed: string, prefix: "f" | "s" | "o"): string {
-    const base = (preferred && toIdLike(preferred, prefix)) || toIdLike(fallbackSeed, prefix) || `${prefix}_item`;
+    const base =
+      (preferred && toIdLike(preferred, prefix)) ||
+      toIdLike(fallbackSeed, prefix) ||
+      `${prefix}_item`;
     let id = base.slice(0, 60);
     for (let n = 2; this.used.has(id); n++) id = `${base.slice(0, 56)}_${n}`;
     this.used.add(id);
@@ -97,26 +132,49 @@ export function registerField(idx: RefIndex, field: Field, rawId?: string) {
   if (!idx.fieldByRef.has(lc(field.label))) idx.fieldByRef.set(lc(field.label), field.id);
 }
 
-export function buildOptions(raw: unknown, alloc: IdAllocator, existing: readonly ChoiceOption[] = []): ChoiceOption[] {
+export function buildOptions(
+  raw: unknown,
+  alloc: IdAllocator,
+  existing: readonly ChoiceOption[] = [],
+): ChoiceOption[] {
   if (!Array.isArray(raw)) return [];
   const byLabel = new Map(existing.map((o) => [lc(o.label), o]));
   const seen = new Set<string>();
   const out: ChoiceOption[] = [];
   for (const item of raw.slice(0, LIMITS.optionsMax)) {
-    const label = str(isRec(item) ? item.label ?? item.value ?? item.text : item, LIMITS.optionLabelMax);
+    const label = str(
+      isRec(item) ? (item.label ?? item.value ?? item.text) : item,
+      LIMITS.optionLabelMax,
+    );
     if (!label || seen.has(lc(label))) continue;
     seen.add(lc(label));
     const keep = byLabel.get(lc(label));
-    out.push(keep ? { id: keep.id, label } : { id: alloc.take(isRec(item) ? str(item.id, 60) : undefined, label, "o"), label });
+    out.push(
+      keep
+        ? { id: keep.id, label }
+        : { id: alloc.take(isRec(item) ? str(item.id, 60) : undefined, label, "o"), label },
+    );
   }
   return out;
 }
 
 /** Map a clause value written as a label (or id) to option ids for choice fields; coerce others. */
-function resolveClauseValue(field: Field, op: Operator, rawValue: unknown, rawValues: unknown): Clause["value"] | null {
+function resolveClauseValue(
+  field: Field,
+  op: Operator,
+  rawValue: unknown,
+  rawValues: unknown,
+): Clause["value"] | null {
   if (op === "isAnswered" || op === "isEmpty") return undefined;
   const kind = FIELD_TYPE_META[field.type].answerKind;
-  const list = Array.isArray(rawValues) && rawValues.length ? rawValues : Array.isArray(rawValue) ? rawValue : rawValue === undefined ? [] : [rawValue];
+  const list =
+    Array.isArray(rawValues) && rawValues.length
+      ? rawValues
+      : Array.isArray(rawValue)
+        ? rawValue
+        : rawValue === undefined
+          ? []
+          : [rawValue];
   if (isChoiceField(field)) {
     const ids = list
       .map((v) => {
@@ -155,13 +213,17 @@ export function buildCondition(raw: unknown, idx: RefIndex): Condition | undefin
   for (const r of rules.slice(0, LIMITS.clausesMax)) {
     if (!isRec(r)) continue;
     const ref = str(r.questionId ?? r.fieldId, 120);
-    const fieldId = ref ? idx.fieldByRef.get(ref) ?? idx.fieldByRef.get(lc(ref)) : undefined;
+    const fieldId = ref ? (idx.fieldByRef.get(ref) ?? idx.fieldByRef.get(lc(ref))) : undefined;
     const field = fieldId ? idx.fields.get(fieldId) : undefined;
-    const op = (OPERATORS as readonly string[]).includes(String(r.operator ?? r.op)) ? (String(r.operator ?? r.op) as Operator) : null;
+    const op = (OPERATORS as readonly string[]).includes(String(r.operator ?? r.op))
+      ? (String(r.operator ?? r.op) as Operator)
+      : null;
     if (!field || !op || !FIELD_TYPE_META[field.type].operators.includes(op)) continue;
     const value = resolveClauseValue(field, op, r.value, r.values);
     if (value === null) continue;
-    clauses.push(value === undefined ? { fieldId: field.id, op } : { fieldId: field.id, op, value });
+    clauses.push(
+      value === undefined ? { fieldId: field.id, op } : { fieldId: field.id, op, value },
+    );
   }
   if (!clauses.length) return undefined;
   return match === "any" ? { any: clauses } : { all: clauses };
@@ -171,7 +233,12 @@ export function buildCondition(raw: unknown, idx: RefIndex): Condition | undefin
  * Build a strict Field from a model-written one. Conditions are NOT resolved here
  * (they need every earlier field registered first); the raw condition is returned.
  */
-export function buildField(raw: unknown, alloc: IdAllocator, notes: string[], existing?: Field): { field: Field; rawId?: string; rawCondition?: unknown } | null {
+export function buildField(
+  raw: unknown,
+  alloc: IdAllocator,
+  notes: string[],
+  existing?: Field,
+): { field: Field; rawId?: string; rawCondition?: unknown } | null {
   if (!isRec(raw)) return null;
   const label = str(raw.label ?? raw.question ?? raw.title, LIMITS.labelMax) ?? existing?.label;
   if (!label) return null;
@@ -183,7 +250,12 @@ export function buildField(raw: unknown, alloc: IdAllocator, notes: string[], ex
   const rawId = str(raw.id, 80);
   const id = existing?.id ?? alloc.take(rawId, label, "f");
 
-  const draft: Rec = { id, type, label, required: typeof raw.required === "boolean" ? raw.required : raw.required === "true" };
+  const draft: Rec = {
+    id,
+    type,
+    label,
+    required: typeof raw.required === "boolean" ? raw.required : raw.required === "true",
+  };
   const helpText = str(raw.helpText ?? raw.description, LIMITS.helpMax);
   if (helpText) draft.helpText = helpText;
   const placeholder = str(raw.placeholder, LIMITS.placeholderMax);
@@ -195,7 +267,11 @@ export function buildField(raw: unknown, alloc: IdAllocator, notes: string[], ex
   if (typeof raw.integer === "boolean") draft.integer = raw.integer;
 
   if (type === "singleChoice" || type === "multipleChoice" || type === "dropdown") {
-    const opts = buildOptions(raw.options, alloc, existing && isChoiceField(existing) ? existing.options : []);
+    const opts = buildOptions(
+      raw.options,
+      alloc,
+      existing && isChoiceField(existing) ? existing.options : [],
+    );
     if (opts.length === 0) {
       notes.push(`"${label}": choice question had no options, changed to short text.`);
       type = "shortText";
@@ -213,7 +289,8 @@ export function buildField(raw: unknown, alloc: IdAllocator, notes: string[], ex
     const r = FieldSchema.safeParse(shaped);
     if (r.success) return { field: r.data, rawId, rawCondition: raw.showIf ?? raw.visibleIf };
     const bad = r.error.issues[0]?.path[0];
-    if (typeof bad !== "string" || ["id", "type", "label", "required", "options"].includes(bad)) break;
+    if (typeof bad !== "string" || ["id", "type", "label", "required", "options"].includes(bad))
+      break;
     const { [bad]: _dropped, ...rest } = shaped;
     shaped = rest;
     notes.push(`"${label}": removed invalid "${bad}" setting.`);
@@ -221,7 +298,9 @@ export function buildField(raw: unknown, alloc: IdAllocator, notes: string[], ex
   return null;
 }
 
-export type RepairResult = { ok: true; form: FormDefinition; notes: string[] } | { ok: false; reason: string; notes: string[] };
+export type RepairResult =
+  | { ok: true; form: FormDefinition; notes: string[] }
+  | { ok: false; reason: string; notes: string[] };
 
 /**
  * Repair a whole model-written form. `partial: true` is for streaming previews: it keeps
@@ -233,23 +312,43 @@ export function repairForm(raw: unknown, opts: { partial?: boolean } = {}): Repa
 
   const alloc = new IdAllocator();
   const idx = emptyRefIndex();
-  const rawSteps: unknown[] = Array.isArray(raw.steps) ? raw.steps : Array.isArray(raw.questions ?? raw.fields) ? [{ title: "Questions", questions: raw.questions ?? raw.fields }] : [];
+  const rawSteps: unknown[] = Array.isArray(raw.steps)
+    ? raw.steps
+    : Array.isArray(raw.questions ?? raw.fields)
+      ? [{ title: "Questions", questions: raw.questions ?? raw.fields }]
+      : [];
 
   const steps: Step[] = [];
-  const pending: { owner: { kind: "step"; step: Step } | { kind: "field"; step: Step; fieldIndex: number }; raw: unknown }[] = [];
+  const pending: {
+    owner: { kind: "step"; step: Step } | { kind: "field"; step: Step; fieldIndex: number };
+    raw: unknown;
+  }[] = [];
 
   rawSteps.slice(0, LIMITS.stepsMax).forEach((rs, si) => {
     if (!isRec(rs)) return;
     const title = str(rs.title, LIMITS.titleMax) ?? `Step ${si + 1}`;
-    const rawFields = Array.isArray(rs.questions) ? rs.questions : Array.isArray(rs.fields) ? rs.fields : [];
-    const wantsReview = rs.kind === "review" || (rawFields.length === 0 && /\breview\b|\bsummary\b|\bconfirm/i.test(title));
-    const step: Step = { id: alloc.take(str(rs.id, 80), title, "s"), title, kind: wantsReview && rawFields.length === 0 ? "review" : "questions", fields: [] };
-    if (wantsReview && rawFields.length > 0) notes.push(`"${title}" was a review step with questions; kept it as a question step.`);
+    const rawFields = Array.isArray(rs.questions)
+      ? rs.questions
+      : Array.isArray(rs.fields)
+        ? rs.fields
+        : [];
+    const wantsReview =
+      rs.kind === "review" ||
+      (rawFields.length === 0 && /\breview\b|\bsummary\b|\bconfirm/i.test(title));
+    const step: Step = {
+      id: alloc.take(str(rs.id, 80), title, "s"),
+      title,
+      kind: wantsReview && rawFields.length === 0 ? "review" : "questions",
+      fields: [],
+    };
+    if (wantsReview && rawFields.length > 0)
+      notes.push(`"${title}" was a review step with questions; kept it as a question step.`);
     const desc = str(rs.description, LIMITS.helpMax);
     if (desc) step.description = desc;
 
     // Step conditions may only use earlier steps' fields, which are already registered.
-    if (rs.showIf ?? rs.visibleIf) pending.push({ owner: { kind: "step", step }, raw: rs.showIf ?? rs.visibleIf });
+    if (rs.showIf ?? rs.visibleIf)
+      pending.push({ owner: { kind: "step", step }, raw: rs.showIf ?? rs.visibleIf });
 
     rawFields.slice(0, LIMITS.fieldsPerStepMax).forEach((rf) => {
       const built = buildField(rf, alloc, notes);
@@ -258,7 +357,11 @@ export function repairForm(raw: unknown, opts: { partial?: boolean } = {}): Repa
         return;
       }
       step.fields.push(built.field);
-      if (built.rawCondition) pending.push({ owner: { kind: "field", step, fieldIndex: step.fields.length - 1 }, raw: built.rawCondition });
+      if (built.rawCondition)
+        pending.push({
+          owner: { kind: "field", step, fieldIndex: step.fields.length - 1 },
+          raw: built.rawCondition,
+        });
       registerField(idx, built.field, built.rawId);
     });
     steps.push(step);
@@ -269,7 +372,11 @@ export function repairForm(raw: unknown, opts: { partial?: boolean } = {}): Repa
     const cond = buildCondition(p.raw, idx);
     if (!cond) continue;
     if (p.owner.kind === "step") p.owner.step.visibleIf = cond;
-    else p.owner.step.fields[p.owner.fieldIndex] = { ...p.owner.step.fields[p.owner.fieldIndex]!, visibleIf: cond };
+    else
+      p.owner.step.fields[p.owner.fieldIndex] = {
+        ...p.owner.step.fields[p.owner.fieldIndex]!,
+        visibleIf: cond,
+      };
   }
 
   // Review step: at most one, always last.
@@ -284,7 +391,10 @@ export function repairForm(raw: unknown, opts: { partial?: boolean } = {}): Repa
     steps: ordered,
     settings: {
       submitLabel: str(raw.submitLabel, 40) ?? "Submit",
-      confirmation: { title: "Thanks!", message: str(raw.confirmationMessage, LIMITS.helpMax) ?? "Your response has been recorded." },
+      confirmation: {
+        title: "Thanks!",
+        message: str(raw.confirmationMessage, LIMITS.helpMax) ?? "Your response has been recorded.",
+      },
     },
   };
   const desc = str(raw.description, LIMITS.helpMax);
@@ -293,9 +403,15 @@ export function repairForm(raw: unknown, opts: { partial?: boolean } = {}): Repa
   dropBrokenRules(form, notes);
 
   if (opts.partial) return { ok: true, form, notes };
-  if (!form.steps.some((s) => s.fields.length > 0)) return { ok: false, reason: "The AI didn't produce any usable questions.", notes };
+  if (!form.steps.some((s) => s.fields.length > 0))
+    return { ok: false, reason: "The AI didn't produce any usable questions.", notes };
   const v = validateForm(form);
-  if (!v.ok) return { ok: false, reason: v.issues.find((i) => i.severity === "error")?.message ?? "Invalid form", notes };
+  if (!v.ok)
+    return {
+      ok: false,
+      reason: v.issues.find((i) => i.severity === "error")?.message ?? "Invalid form",
+      notes,
+    };
   return { ok: true, form: v.form, notes };
 }
 

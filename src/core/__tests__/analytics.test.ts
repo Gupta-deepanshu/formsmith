@@ -1,10 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { choiceSummaries, completionRate, csvCell, funnel, mergedFields, toCsv, type ResponseRecord } from "../analytics";
+import {
+  choiceSummaries,
+  completionRate,
+  csvCell,
+  funnel,
+  mergedFields,
+  toCsv,
+  type ResponseRecord,
+} from "../analytics";
 import { formatAnswer } from "../answers";
 import { feedbackForm, jobApplicationForm } from "../templates";
 
 const job = jobApplicationForm();
-const r = (over: Partial<ResponseRecord>): ResponseRecord => ({ id: "r", versionId: "v1", status: "draft", answers: {}, furthestStepIndex: 0, startedAt: "2026-11-01T10:00:00Z", submittedAt: null, ...over });
+const r = (over: Partial<ResponseRecord>): ResponseRecord => ({
+  id: "r",
+  versionId: "v1",
+  status: "draft",
+  answers: {},
+  furthestStepIndex: 0,
+  startedAt: "2026-11-01T10:00:00Z",
+  submittedAt: null,
+  ...over,
+});
 
 describe("funnel", () => {
   const responses = [
@@ -34,7 +51,10 @@ describe("choice summaries", () => {
     const fb = feedbackForm();
     const fields = fb.steps.flatMap((s) => s.fields);
     const rows = [
-      r({ status: "submitted", answers: { f_rating: 5, f_used: ["o_ai", "o_builder"], f_contact_ok: true } }),
+      r({
+        status: "submitted",
+        answers: { f_rating: 5, f_used: ["o_ai", "o_builder"], f_contact_ok: true },
+      }),
       r({ status: "submitted", answers: { f_rating: 4, f_used: ["o_ai"], f_contact_ok: false } }),
       r({ status: "draft", answers: { f_rating: 1 } }),
     ];
@@ -67,16 +87,29 @@ describe("csv", () => {
     expect(csvCell("plain")).toBe("plain");
     expect(csvCell('say "hi", ok')).toBe('"say ""hi"", ok"');
     expect(csvCell("line\nbreak")).toBe('"line\nbreak"');
-    expect(csvCell("=HYPERLINK(\"x\")")).toBe("\"'=HYPERLINK(\"\"x\"\")\"");
+    expect(csvCell('=HYPERLINK("x")')).toBe('"\'=HYPERLINK(""x"")"');
     expect(csvCell("+1 555")).toBe("'+1 555");
     expect(csvCell("-5")).toBe("'-5");
   });
 
   it("builds a sheet with labels for choices", () => {
     const fields = job.steps.flatMap((s) => s.fields).slice(0, 5);
-    const csv = toCsv(fields, [r({ id: "x1", status: "submitted", submittedAt: "2026-11-02", answers: { f_name: "Ada, L.", f_role: "o_senior" } })], () => "v1");
+    const csv = toCsv(
+      fields,
+      [
+        r({
+          id: "x1",
+          status: "submitted",
+          submittedAt: "2026-11-02",
+          answers: { f_name: "Ada, L.", f_role: "o_senior" },
+        }),
+      ],
+      () => "v1",
+    );
     const [head, row] = csv.slice(1).split("\r\n");
-    expect(head).toBe("Response ID,Status,Version,Started,Submitted,Full name,Email,Phone,Resume link,Role level");
+    expect(head).toBe(
+      "Response ID,Status,Version,Started,Submitted,Full name,Email,Phone,Resume link,Role level",
+    );
     expect(row).toBe('x1,Submitted,v1,2026-11-01T10:00:00Z,2026-11-02,"Ada, L.",,,,Senior');
   });
 

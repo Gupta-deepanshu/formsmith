@@ -11,7 +11,8 @@ import { FIELD_TYPES, type FormDefinition } from "@/core";
  *    produce a strange but valid form.
  */
 
-const fence = (tag: string, text: string) => `<${tag}>\n${text.replaceAll(new RegExp(`</?${tag}>`, "gi"), "")}\n</${tag}>`;
+const fence = (tag: string, text: string) =>
+  `<${tag}>\n${text.replaceAll(new RegExp(`</?${tag}>`, "gi"), "")}\n</${tag}>`;
 
 const RULES = `Field types: ${FIELD_TYPES.join(", ")}.
 - Use singleChoice/dropdown/multipleChoice only with 2-12 short option labels.

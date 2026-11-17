@@ -1,6 +1,15 @@
 "use client";
 
-import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/cn";
 import { Icon } from "./Icon";
 
@@ -10,7 +19,12 @@ import { Icon } from "./Icon";
  * makes announcements reliable. Auto-dismiss pauses while hovered or focused.
  */
 export type ToastTone = "neutral" | "success" | "danger";
-export type ToastInput = { message: string; tone?: ToastTone; action?: { label: string; onClick: () => void }; durationMs?: number };
+export type ToastInput = {
+  message: string;
+  tone?: ToastTone;
+  action?: { label: string; onClick: () => void };
+  durationMs?: number;
+};
 type ToastItem = ToastInput & { id: number };
 
 type ToastApi = { show: (t: ToastInput) => number; dismiss: (id: number) => void };
@@ -40,12 +54,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext value={api}>
       {children}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 p-4 sm:items-end">
-        <div role="status" aria-live="polite" className="flex flex-col items-center gap-2 sm:items-end">
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex flex-col items-center gap-2 sm:items-end"
+        >
           {polite.map((t) => (
             <ToastView key={t.id} item={t} onDismiss={dismiss} />
           ))}
         </div>
-        <div role="alert" aria-live="assertive" className="flex flex-col items-center gap-2 sm:items-end">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="flex flex-col items-center gap-2 sm:items-end"
+        >
           {assertive.map((t) => (
             <ToastView key={t.id} item={t} onDismiss={dismiss} />
           ))}
@@ -72,10 +94,18 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
       onBlur={() => setPaused(false)}
       className={cn(
         "pointer-events-auto flex w-full max-w-sm animate-enter items-center gap-3 rounded-card border bg-surface px-4 py-3 text-sm shadow-card",
-        item.tone === "danger" ? "border-danger" : item.tone === "success" ? "border-success" : "border-line",
+        item.tone === "danger"
+          ? "border-danger"
+          : item.tone === "success"
+            ? "border-success"
+            : "border-line",
       )}
     >
-      {item.tone === "success" ? <Icon name="check" className="text-success" /> : item.tone === "danger" ? <Icon name="alert" className="text-danger" /> : null}
+      {item.tone === "success" ? (
+        <Icon name="check" className="text-success" />
+      ) : item.tone === "danger" ? (
+        <Icon name="alert" className="text-danger" />
+      ) : null}
       <p className="flex-1 text-fg">{item.message}</p>
       {item.action ? (
         <button
@@ -89,7 +119,12 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
           {item.action.label}
         </button>
       ) : null}
-      <button type="button" aria-label="Dismiss notification" onClick={() => onDismiss(item.id)} className="rounded-control p-1 text-fg-muted hover:bg-subtle">
+      <button
+        type="button"
+        aria-label="Dismiss notification"
+        onClick={() => onDismiss(item.id)}
+        className="rounded-control p-1 text-fg-muted hover:bg-subtle"
+      >
         <Icon name="x" />
       </button>
     </div>

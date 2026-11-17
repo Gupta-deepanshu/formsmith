@@ -9,7 +9,10 @@ import type { PatchOp } from "./ops";
  * caller applies as ONE transaction, so a single undo reverts all of it.
  */
 
-function stripRefs(cond: Condition | undefined, removed: ReadonlySet<string>): { changed: boolean; next: Condition | undefined } {
+function stripRefs(
+  cond: Condition | undefined,
+  removed: ReadonlySet<string>,
+): { changed: boolean; next: Condition | undefined } {
   if (!cond) return { changed: false, next: undefined };
   const key = "all" in cond ? "all" : "any";
   const clauses = "all" in cond ? cond.all : cond.any;
@@ -20,7 +23,10 @@ function stripRefs(cond: Condition | undefined, removed: ReadonlySet<string>): {
 }
 
 /** Ops that remove rule clauses referring to any of `removedFieldIds` (rules elsewhere in the form). */
-export function dropReferencesOps(nf: NormalizedForm, removedFieldIds: ReadonlySet<string>): PatchOp[] {
+export function dropReferencesOps(
+  nf: NormalizedForm,
+  removedFieldIds: ReadonlySet<string>,
+): PatchOp[] {
   const ops: PatchOp[] = [];
   for (const stepId of nf.stepOrder) {
     const step = nf.steps[stepId]!;
@@ -46,7 +52,10 @@ export function removeStepOps(nf: NormalizedForm, stepId: string): PatchOp[] {
 }
 
 /** Copy a field (new ids for it and its options) directly below the original. */
-export function duplicateFieldOps(nf: NormalizedForm, fieldId: string): { ops: PatchOp[]; newId: string } | null {
+export function duplicateFieldOps(
+  nf: NormalizedForm,
+  fieldId: string,
+): { ops: PatchOp[]; newId: string } | null {
   const loc = locateField(nf, fieldId);
   const field = nf.fields[fieldId];
   if (!loc || !field) return null;
@@ -54,7 +63,10 @@ export function duplicateFieldOps(nf: NormalizedForm, fieldId: string): { ops: P
   copy.id = createId("f");
   copy.label = `${field.label} (copy)`.slice(0, 300);
   if ("options" in copy) copy.options = copy.options.map((o) => ({ ...o, id: createId("o") }));
-  return { ops: [{ op: "addField", stepId: loc.stepId, index: loc.index + 1, field: copy }], newId: copy.id };
+  return {
+    ops: [{ op: "addField", stepId: loc.stepId, index: loc.index + 1, field: copy }],
+    newId: copy.id,
+  };
 }
 
 /** Move a field one position up/down, crossing into the neighbouring step at the edges. */
@@ -68,11 +80,19 @@ export function nudgeFieldOps(nf: NormalizedForm, fieldId: string, direction: -1
   }
   // At an edge: move into the adjacent questions step (end of previous / start of next).
   let si = nf.stepOrder.indexOf(loc.stepId) + direction;
-  while (si >= 0 && si < nf.stepOrder.length && nf.steps[nf.stepOrder[si]!]!.kind === "review") si += direction;
+  while (si >= 0 && si < nf.stepOrder.length && nf.steps[nf.stepOrder[si]!]!.kind === "review")
+    si += direction;
   const neighbourId = nf.stepOrder[si];
   if (!neighbourId) return [];
   const neighbour = nf.steps[neighbourId]!;
-  return [{ op: "moveField", fieldId, toStepId: neighbourId, toIndex: direction === -1 ? neighbour.fieldIds.length : 0 }];
+  return [
+    {
+      op: "moveField",
+      fieldId,
+      toStepId: neighbourId,
+      toIndex: direction === -1 ? neighbour.fieldIds.length : 0,
+    },
+  ];
 }
 
 export function nudgeStepOps(nf: NormalizedForm, stepId: string, direction: -1 | 1): PatchOp[] {

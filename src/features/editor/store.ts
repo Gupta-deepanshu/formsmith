@@ -32,10 +32,18 @@ import {
  *   setters, which is why undo/redo covers manual and AI edits alike.
  */
 
-export type Selection = { kind: "form" } | { kind: "step"; id: string } | { kind: "field"; id: string };
+export type Selection =
+  { kind: "form" } | { kind: "step"; id: string } | { kind: "field"; id: string };
 export type SaveStatus = "idle" | "saving" | "saved" | "error" | "offline";
 
-export type AiHighlight = { fieldIds: string[]; stepIds: string[]; summary: string; historyAt: number; applied: number; skipped: number };
+export type AiHighlight = {
+  fieldIds: string[];
+  stepIds: string[];
+  summary: string;
+  historyAt: number;
+  applied: number;
+  skipped: number;
+};
 
 export type EditorState = {
   form: NormalizedForm;
@@ -53,7 +61,10 @@ export type EditorState = {
   /** Snapshot of the published version, for the "unpublished changes" badge. */
   publishedJson: string | null;
   actions: {
-    dispatch: (ops: PatchOp[], meta?: { label?: string; source?: "manual" | "ai"; select?: Selection }) => boolean;
+    dispatch: (
+      ops: PatchOp[],
+      meta?: { label?: string; source?: "manual" | "ai"; select?: Selection },
+    ) => boolean;
     undo: () => void;
     redo: () => void;
     select: (sel: Selection) => void;
@@ -98,7 +109,11 @@ function repairSelection(nf: NormalizedForm, sel: Selection): Selection {
   return sel;
 }
 
-export type EditorInit = { form: FormDefinition; savedAt?: string | null; publishedForm?: FormDefinition | null };
+export type EditorInit = {
+  form: FormDefinition;
+  savedAt?: string | null;
+  publishedForm?: FormDefinition | null;
+};
 
 export function createEditorStore(init: EditorInit): StoreApi<EditorState> {
   const nf = normalize(init.form);
@@ -167,7 +182,13 @@ export function createEditorStore(init: EditorInit): StoreApi<EditorState> {
         const entry = peekRedo(s.history);
         if (!entry) return;
         const { form } = applyOps(s.form, entry.ops);
-        set({ form, history: afterRedo(s.history), selection: repairSelection(form, s.selection), ...computeIssues(form, s.issuesByTarget), revision: s.revision + 1 });
+        set({
+          form,
+          history: afterRedo(s.history),
+          selection: repairSelection(form, s.selection),
+          ...computeIssues(form, s.issuesByTarget),
+          revision: s.revision + 1,
+        });
       },
       select(selection) {
         const s = get();
@@ -180,7 +201,10 @@ export function createEditorStore(init: EditorInit): StoreApi<EditorState> {
         set((s) => ({ save: { ...s.save, status: "saving", message: undefined } }));
       },
       markSaved(revision, savedAt) {
-        set((s) => ({ savedRevision: Math.max(s.savedRevision, revision), save: { status: "saved", savedAt } }));
+        set((s) => ({
+          savedRevision: Math.max(s.savedRevision, revision),
+          save: { status: "saved", savedAt },
+        }));
       },
       markSaveFailed(status, message) {
         set((s) => ({ save: { ...s.save, status, message } }));
@@ -193,7 +217,15 @@ export function createEditorStore(init: EditorInit): StoreApi<EditorState> {
       },
       reset(form) {
         const next = normalize(form);
-        set({ form: next, history: EMPTY_HISTORY, selection: { kind: "form" }, previewStepId: next.stepOrder[0] ?? null, ...computeIssues(next), revision: get().revision + 1, aiHighlight: null });
+        set({
+          form: next,
+          history: EMPTY_HISTORY,
+          selection: { kind: "form" },
+          previewStepId: next.stepOrder[0] ?? null,
+          ...computeIssues(next),
+          revision: get().revision + 1,
+          aiHighlight: null,
+        });
       },
     },
   }));

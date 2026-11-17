@@ -22,9 +22,15 @@ import { locateField, type NormalizedForm, type StepNode } from "./normalized";
  */
 
 type KeysOfUnion<T> = T extends unknown ? keyof T : never;
-type ValueOfUnion<T, K extends PropertyKey> = T extends unknown ? (K extends keyof T ? T[K] : never) : never;
+type ValueOfUnion<T, K extends PropertyKey> = T extends unknown
+  ? K extends keyof T
+    ? T[K]
+    : never
+  : never;
 /** Any subset of any field type's keys. `undefined` (or `null` from JSON) removes the key. */
-export type FieldChanges = { [K in Exclude<KeysOfUnion<Field>, "id">]?: ValueOfUnion<Field, K> | undefined };
+export type FieldChanges = {
+  [K in Exclude<KeysOfUnion<Field>, "id">]?: ValueOfUnion<Field, K> | undefined;
+};
 export type StepChanges = Partial<Pick<Step, "title" | "description" | "kind" | "visibleIf">>;
 export type FormChanges = Partial<Pick<FormDefinition, "title" | "description" | "settings">>;
 
@@ -49,7 +55,12 @@ export const PatchOpSchema = z.discriminatedUnion("op", [
     op: z.literal("updateStep"),
     stepId: Id,
     changes: z
-      .object({ title: z.string().optional(), description: nullable(z.string()), kind: StepSchema.shape.kind.optional(), visibleIf: nullable(StepSchema.shape.visibleIf.unwrap()) })
+      .object({
+        title: z.string().optional(),
+        description: nullable(z.string()),
+        kind: StepSchema.shape.kind.optional(),
+        visibleIf: nullable(StepSchema.shape.visibleIf.unwrap()),
+      })
       .strict(),
   }),
   z.object({ op: z.literal("removeStep"), stepId: Id }),
@@ -58,13 +69,22 @@ export const PatchOpSchema = z.discriminatedUnion("op", [
   z.object({
     op: z.literal("updateField"),
     fieldId: Id,
-    changes: z.record(z.string(), z.unknown()).refine((c) => !("id" in c), "A field's id can't be changed").refine((c) => !("type" in c) || FieldType.safeParse(c.type).success, "Unknown field type"),
+    changes: z
+      .record(z.string(), z.unknown())
+      .refine((c) => !("id" in c), "A field's id can't be changed")
+      .refine((c) => !("type" in c) || FieldType.safeParse(c.type).success, "Unknown field type"),
   }),
   z.object({ op: z.literal("removeField"), fieldId: Id }),
   z.object({ op: z.literal("moveField"), fieldId: Id, toStepId: Id, toIndex: index }),
   z.object({
     op: z.literal("updateForm"),
-    changes: z.object({ title: z.string().optional(), description: nullable(z.string()), settings: FormSettings.optional() }).strict(),
+    changes: z
+      .object({
+        title: z.string().optional(),
+        description: nullable(z.string()),
+        settings: FormSettings.optional(),
+      })
+      .strict(),
   }),
 ]);
 
@@ -94,7 +114,10 @@ function removeAt<T>(arr: readonly T[], i: number): T[] {
 const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b);
 
 /** Merge `changes` into `obj`; undefined/null removes the key. */
-function merge<T extends object>(obj: T, changes: Record<string, unknown>): Record<string, unknown> {
+function merge<T extends object>(
+  obj: T,
+  changes: Record<string, unknown>,
+): Record<string, unknown> {
   const next: Record<string, unknown> = { ...(obj as Record<string, unknown>) };
   for (const [k, v] of Object.entries(changes)) {
     if (v === undefined || v === null) delete next[k];
@@ -104,7 +127,11 @@ function merge<T extends object>(obj: T, changes: Record<string, unknown>): Reco
 }
 
 /** Changes that turn `after` back into `before`, over the union of their keys. */
-function diffInverse(before: Record<string, unknown>, after: Record<string, unknown>, skip: ReadonlySet<string>): Record<string, unknown> {
+function diffInverse(
+  before: Record<string, unknown>,
+  after: Record<string, unknown>,
+  skip: ReadonlySet<string>,
+): Record<string, unknown> {
   const inverse: Record<string, unknown> = {};
   for (const k of new Set([...Object.keys(before), ...Object.keys(after)])) {
     if (skip.has(k)) continue;
@@ -132,7 +159,12 @@ export function applyOp(nf: NormalizedForm, op: PatchOp): ApplyResult {
       const { fields: stepFields, ...rest } = op.step;
       const node: StepNode = { ...rest, fieldIds: stepFields.map((f) => f.id) };
       return {
-        form: { ...nf, stepOrder: insertAt(nf.stepOrder, op.index, op.step.id), steps: { ...nf.steps, [op.step.id]: node }, fields },
+        form: {
+          ...nf,
+          stepOrder: insertAt(nf.stepOrder, op.index, op.step.id),
+          steps: { ...nf.steps, [op.step.id]: node },
+          fields,
+        },
         inverse: [{ op: "removeStep", stepId: op.step.id }],
       };
     }
@@ -146,7 +178,10 @@ export function applyOp(nf: NormalizedForm, op: PatchOp): ApplyResult {
       delete steps[op.stepId];
       const fields = { ...nf.fields };
       for (const id of fieldIds) delete fields[id];
-      return { form: { ...nf, stepOrder: removeAt(nf.stepOrder, at), steps, fields }, inverse: [{ op: "addStep", index: at, step }] };
+      return {
+        form: { ...nf, stepOrder: removeAt(nf.stepOrder, at), steps, fields },
+        inverse: [{ op: "addStep", index: at, step }],
+      };
     }
     case "updateStep": {
       const node = nf.steps[op.stepId];
@@ -163,16 +198,23 @@ export function applyOp(nf: NormalizedForm, op: PatchOp): ApplyResult {
       if (from === -1) throw new PatchError(`Step "${op.stepId}" not found`, op);
       const without = removeAt(nf.stepOrder, from);
       const to = clamp(op.toIndex, without.length);
-      return { form: { ...nf, stepOrder: insertAt(without, to, op.stepId) }, inverse: [{ op: "moveStep", stepId: op.stepId, toIndex: from }] };
+      return {
+        form: { ...nf, stepOrder: insertAt(without, to, op.stepId) },
+        inverse: [{ op: "moveStep", stepId: op.stepId, toIndex: from }],
+      };
     }
     case "addField": {
       const node = nf.steps[op.stepId];
       if (!node) throw new PatchError(`Step "${op.stepId}" not found`, op);
-      if (nf.fields[op.field.id]) throw new PatchError(`Question "${op.field.id}" already exists`, op);
+      if (nf.fields[op.field.id])
+        throw new PatchError(`Question "${op.field.id}" already exists`, op);
       return {
         form: {
           ...nf,
-          steps: { ...nf.steps, [op.stepId]: { ...node, fieldIds: insertAt(node.fieldIds, op.index, op.field.id) } },
+          steps: {
+            ...nf.steps,
+            [op.stepId]: { ...node, fieldIds: insertAt(node.fieldIds, op.index, op.field.id) },
+          },
           fields: { ...nf.fields, [op.field.id]: op.field },
         },
         inverse: [{ op: "removeField", fieldId: op.field.id }],
@@ -186,7 +228,14 @@ export function applyOp(nf: NormalizedForm, op: PatchOp): ApplyResult {
       const fields = { ...nf.fields };
       delete fields[op.fieldId];
       return {
-        form: { ...nf, steps: { ...nf.steps, [loc.stepId]: { ...node, fieldIds: removeAt(node.fieldIds, loc.index) } }, fields },
+        form: {
+          ...nf,
+          steps: {
+            ...nf.steps,
+            [loc.stepId]: { ...node, fieldIds: removeAt(node.fieldIds, loc.index) },
+          },
+          fields,
+        },
         inverse: [{ op: "addField", stepId: loc.stepId, index: loc.index, field }],
       };
     }
@@ -215,14 +264,25 @@ export function applyOp(nf: NormalizedForm, op: PatchOp): ApplyResult {
         steps[loc.stepId] = { ...source, fieldIds: insertAt(without, op.toIndex, op.fieldId) };
       } else {
         steps[loc.stepId] = { ...source, fieldIds: removeAt(source.fieldIds, loc.index) };
-        steps[op.toStepId] = { ...target, fieldIds: insertAt(target.fieldIds, op.toIndex, op.fieldId) };
+        steps[op.toStepId] = {
+          ...target,
+          fieldIds: insertAt(target.fieldIds, op.toIndex, op.fieldId),
+        };
       }
-      return { form: { ...nf, steps }, inverse: [{ op: "moveField", fieldId: op.fieldId, toStepId: loc.stepId, toIndex: loc.index }] };
+      return {
+        form: { ...nf, steps },
+        inverse: [
+          { op: "moveField", fieldId: op.fieldId, toStepId: loc.stepId, toIndex: loc.index },
+        ],
+      };
     }
     case "updateForm": {
       const next = merge(nf.meta, op.changes);
       const inverse = diffInverse(nf.meta as unknown as Record<string, unknown>, next, NO_KEYS);
-      return { form: { ...nf, meta: next as unknown as NormalizedForm["meta"] }, inverse: [{ op: "updateForm", changes: inverse as FormChanges }] };
+      return {
+        form: { ...nf, meta: next as unknown as NormalizedForm["meta"] },
+        inverse: [{ op: "updateForm", changes: inverse as FormChanges }],
+      };
     }
   }
 }

@@ -25,8 +25,10 @@ const paths = {
   rule: "M3 4h10M3 8h6M3 12h3M11 10l2 2-2 2",
   grip: "M6 4h.01M10 4h.01M6 8h.01M10 8h.01M6 12h.01M10 12h.01",
   edit: "M10.5 3l2.5 2.5L6 12.5H3.5V10L10.5 3z",
-  alert: "M8 5.5v3M8 11h.01M7.1 2.6L1.7 12a1 1 0 00.9 1.5h10.8a1 1 0 00.9-1.5L8.9 2.6a1 1 0 00-1.8 0z",
-  wifiOff: "M2 2l12 12M5.5 8.5a4 4 0 015 0M3 6a7.5 7.5 0 012.6-1.6M13 6a7.5 7.5 0 00-4.2-2M8 12h.01",
+  alert:
+    "M8 5.5v3M8 11h.01M7.1 2.6L1.7 12a1 1 0 00.9 1.5h10.8a1 1 0 00.9-1.5L8.9 2.6a1 1 0 00-1.8 0z",
+  wifiOff:
+    "M2 2l12 12M5.5 8.5a4 4 0 015 0M3 6a7.5 7.5 0 012.6-1.6M13 6a7.5 7.5 0 00-4.2-2M8 12h.01",
   menu: "M3 4.5h10M3 8h10M3 11.5h10",
   form: "M3.5 2.5h9v11h-9zM5.5 5.5h5M5.5 8h5M5.5 10.5h3",
   keyboard: "M1.5 4.5h13v7h-13zM4 7h.01M6.5 7h.01M9 7h.01M11.5 7h.01M5 9.5h6",
@@ -34,7 +36,15 @@ const paths = {
 
 export type IconName = keyof typeof paths;
 
-export function Icon({ name, className, label }: { name: IconName; className?: string; label?: string }) {
+export function Icon({
+  name,
+  className,
+  label,
+}: {
+  name: IconName;
+  className?: string;
+  label?: string;
+}) {
   return (
     <svg
       viewBox="0 0 16 16"

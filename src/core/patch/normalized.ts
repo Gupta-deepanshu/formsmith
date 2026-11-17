@@ -10,7 +10,12 @@ import type { Field, FormDefinition, FormSettings, Step } from "../schema/defini
 export type StepNode = Omit<Step, "fields"> & { fieldIds: string[] };
 
 export type NormalizedForm = {
-  meta: { schemaVersion: FormDefinition["schemaVersion"]; title: string; description?: string; settings: FormSettings };
+  meta: {
+    schemaVersion: FormDefinition["schemaVersion"];
+    title: string;
+    description?: string;
+    settings: FormSettings;
+  };
   stepOrder: string[];
   steps: Record<string, StepNode>;
   fields: Record<string, Field>;
@@ -26,7 +31,11 @@ export function normalize(form: FormDefinition): NormalizedForm {
     stepOrder.push(step.id);
     for (const f of stepFields) fields[f.id] = f;
   }
-  const meta: NormalizedForm["meta"] = { schemaVersion: form.schemaVersion, title: form.title, settings: form.settings };
+  const meta: NormalizedForm["meta"] = {
+    schemaVersion: form.schemaVersion,
+    title: form.title,
+    settings: form.settings,
+  };
   if (form.description !== undefined) meta.description = form.description;
   return { meta, stepOrder, steps, fields };
 }
@@ -46,7 +55,10 @@ export function denormalize(nf: NormalizedForm): FormDefinition {
 }
 
 /** Which step holds a field, and where. O(steps). */
-export function locateField(nf: NormalizedForm, fieldId: string): { stepId: string; index: number } | null {
+export function locateField(
+  nf: NormalizedForm,
+  fieldId: string,
+): { stepId: string; index: number } | null {
   for (const stepId of nf.stepOrder) {
     const index = nf.steps[stepId]!.fieldIds.indexOf(fieldId);
     if (index !== -1) return { stepId, index };

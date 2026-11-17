@@ -13,10 +13,16 @@ const eslintConfig = defineConfig([
         "error",
         {
           patterns: [
-            { group: ["react", "react-*", "react/*"], message: "src/core must not depend on React." },
+            {
+              group: ["react", "react-*", "react/*"],
+              message: "src/core must not depend on React.",
+            },
             { group: ["next", "next/*"], message: "src/core must not depend on Next.js." },
             { group: ["@supabase/*"], message: "src/core must not depend on Supabase." },
-            { group: ["@/components/*", "@/features/*", "@/lib/*", "@/server/*", "@/app/*"], message: "src/core may only import from src/core." },
+            {
+              group: ["@/components/*", "@/features/*", "@/lib/*", "@/server/*", "@/app/*"],
+              message: "src/core may only import from src/core.",
+            },
           ],
         },
       ],
@@ -24,10 +30,19 @@ const eslintConfig = defineConfig([
   },
   {
     rules: {
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
     },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/lib/supabase/database.types.ts"]),
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "src/lib/supabase/database.types.ts",
+  ]),
 ]);
 
 export default eslintConfig;

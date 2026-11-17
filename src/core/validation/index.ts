@@ -68,8 +68,10 @@ export function answerSchema(field: Field): z.ZodType {
     case "shortText":
     case "longText": {
       let s = z.string(requiredError("Enter text."));
-      if (field.minLength != null) s = s.min(field.minLength, `Use at least ${field.minLength} characters.`);
-      if (field.maxLength != null) s = s.max(field.maxLength, `Use at most ${field.maxLength} characters.`);
+      if (field.minLength != null)
+        s = s.min(field.minLength, `Use at least ${field.minLength} characters.`);
+      if (field.maxLength != null)
+        s = s.max(field.maxLength, `Use at most ${field.maxLength} characters.`);
       else s = s.max(10_000, "That's too long.");
       if (field.type === "shortText" && field.pattern) {
         // Pattern was validated when the form was saved; guard anyway.
@@ -111,27 +113,39 @@ export function answerSchema(field: Field): z.ZodType {
     }
     case "rating":
       pre = (v) => emptyToUndefined(toNumber(v));
-      inner = z.int(requiredError(MESSAGES.rating)).min(1, MESSAGES.rating).max(field.max, MESSAGES.rating);
+      inner = z
+        .int(requiredError(MESSAGES.rating))
+        .min(1, MESSAGES.rating)
+        .max(field.max, MESSAGES.rating);
       break;
     case "date": {
       let d = z.iso.date(requiredError(MESSAGES.date));
-      if (field.minDate) d = d.refine((v) => v >= field.minDate!, `Choose ${field.minDate} or later.`);
-      if (field.maxDate) d = d.refine((v) => v <= field.maxDate!, `Choose ${field.maxDate} or earlier.`);
+      if (field.minDate)
+        d = d.refine((v) => v >= field.minDate!, `Choose ${field.minDate} or later.`);
+      if (field.maxDate)
+        d = d.refine((v) => v <= field.maxDate!, `Choose ${field.maxDate} or earlier.`);
       inner = d;
       break;
     }
     case "singleChoice":
     case "dropdown": {
       const ids = field.options.map((o) => o.id);
-      inner = z.string(requiredError(MESSAGES.choose)).refine((v) => ids.includes(v), MESSAGES.choose);
+      inner = z
+        .string(requiredError(MESSAGES.choose))
+        .refine((v) => ids.includes(v), MESSAGES.choose);
       break;
     }
     case "multipleChoice": {
       const ids = field.options.map((o) => o.id);
       pre = (v) => emptyToUndefined(Array.isArray(v) ? [...new Set(v)] : v);
-      let a = z.array(z.string().refine((v) => ids.includes(v), MESSAGES.choose), requiredError(MESSAGES.chooseOne));
-      if (field.minSelected != null && field.minSelected > 0) a = a.min(field.minSelected, `Choose at least ${field.minSelected}.`);
-      if (field.maxSelected != null) a = a.max(field.maxSelected, `Choose at most ${field.maxSelected}.`);
+      let a = z.array(
+        z.string().refine((v) => ids.includes(v), MESSAGES.choose),
+        requiredError(MESSAGES.chooseOne),
+      );
+      if (field.minSelected != null && field.minSelected > 0)
+        a = a.min(field.minSelected, `Choose at least ${field.minSelected}.`);
+      if (field.maxSelected != null)
+        a = a.max(field.maxSelected, `Choose at most ${field.maxSelected}.`);
       inner = a;
       break;
     }
@@ -151,14 +165,23 @@ function objectFor(fields: Field[]): z.ZodObject {
 }
 
 /** Schema for one step: the step's currently visible fields only. */
-export function buildStepSchema(form: FormDefinition, stepId: string, answers: Answers, visibility: Visibility = computeVisibility(form, answers)): z.ZodObject {
+export function buildStepSchema(
+  form: FormDefinition,
+  stepId: string,
+  answers: Answers,
+  visibility: Visibility = computeVisibility(form, answers),
+): z.ZodObject {
   const step = form.steps.find((s) => s.id === stepId);
   if (!step || !visibility.steps.has(step.id)) return z.object({});
   return objectFor(step.fields.filter((f) => visibility.fields.has(f.id)));
 }
 
 /** Schema for a whole submission: every visible field across the visible path. Unknown keys are stripped. */
-export function buildSubmissionSchema(form: FormDefinition, answers: Answers, visibility: Visibility = computeVisibility(form, answers)): z.ZodObject {
+export function buildSubmissionSchema(
+  form: FormDefinition,
+  answers: Answers,
+  visibility: Visibility = computeVisibility(form, answers),
+): z.ZodObject {
   const fields = form.steps.flatMap((s) => s.fields).filter((f) => visibility.fields.has(f.id));
   return objectFor(fields);
 }
@@ -178,7 +201,11 @@ function toFieldErrors(error: z.ZodError): FieldErrors {
   return out;
 }
 
-export function validateStep(form: FormDefinition, stepId: string, answers: Answers): ValidationResult {
+export function validateStep(
+  form: FormDefinition,
+  stepId: string,
+  answers: Answers,
+): ValidationResult {
   const r = buildStepSchema(form, stepId, answers).safeParse(answers);
   if (r.success) return { success: true, data: r.data as Answers };
   return { success: false, errors: toFieldErrors(r.error), firstInvalidStepId: stepId };
@@ -195,11 +222,13 @@ export function validateSubmission(form: FormDefinition, answers: Answers): Vali
   if (r.success) {
     // Drop keys whose value parsed to undefined (optional and empty).
     const data: Answers = {};
-    for (const [k, v] of Object.entries(r.data)) if (v !== undefined) data[k] = v as Answers[string];
+    for (const [k, v] of Object.entries(r.data))
+      if (v !== undefined) data[k] = v as Answers[string];
     return { success: true, data };
   }
   const errors = toFieldErrors(r.error);
   const firstInvalidStepId =
-    form.steps.find((s) => visibility.steps.has(s.id) && s.fields.some((f) => f.id in errors))?.id ?? null;
+    form.steps.find((s) => visibility.steps.has(s.id) && s.fields.some((f) => f.id in errors))
+      ?.id ?? null;
   return { success: false, errors, firstInvalidStepId };
 }

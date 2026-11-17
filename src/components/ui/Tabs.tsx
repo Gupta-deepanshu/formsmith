@@ -10,7 +10,19 @@ import { cn } from "@/lib/cn";
  */
 export type TabItem<K extends string> = { key: K; label: ReactNode; panel: ReactNode };
 
-export function Tabs<K extends string>({ items, value, onChange, label, className }: { items: TabItem<K>[]; value: K; onChange: (key: K) => void; label: string; className?: string }) {
+export function Tabs<K extends string>({
+  items,
+  value,
+  onChange,
+  label,
+  className,
+}: {
+  items: TabItem<K>[];
+  value: K;
+  onChange: (key: K) => void;
+  label: string;
+  className?: string;
+}) {
   const base = useId();
   const refs = useRef(new Map<K, HTMLButtonElement>());
 
@@ -30,7 +42,12 @@ export function Tabs<K extends string>({ items, value, onChange, label, classNam
 
   return (
     <div className={className}>
-      <div role="tablist" aria-label={label} onKeyDown={onKeyDown} className="flex gap-1 overflow-x-auto border-b border-line">
+      <div
+        role="tablist"
+        aria-label={label}
+        onKeyDown={onKeyDown}
+        className="flex gap-1 overflow-x-auto border-b border-line"
+      >
         {items.map((t) => {
           const selected = t.key === value;
           return (
@@ -49,7 +66,9 @@ export function Tabs<K extends string>({ items, value, onChange, label, classNam
               onClick={() => onChange(t.key)}
               className={cn(
                 "-mb-px border-b-2 px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-150",
-                selected ? "border-accent text-fg" : "border-transparent text-fg-muted hover:text-fg",
+                selected
+                  ? "border-accent text-fg"
+                  : "border-transparent text-fg-muted hover:text-fg",
               )}
             >
               {t.label}
@@ -58,7 +77,15 @@ export function Tabs<K extends string>({ items, value, onChange, label, classNam
         })}
       </div>
       {items.map((t) => (
-        <div key={t.key} role="tabpanel" id={`${base}-panel-${t.key}`} aria-labelledby={`${base}-tab-${t.key}`} hidden={t.key !== value} tabIndex={0} className="pt-4 focus-visible:outline-offset-4">
+        <div
+          key={t.key}
+          role="tabpanel"
+          id={`${base}-panel-${t.key}`}
+          aria-labelledby={`${base}-tab-${t.key}`}
+          hidden={t.key !== value}
+          tabIndex={0}
+          className="pt-4 focus-visible:outline-offset-4"
+        >
           {t.key === value ? t.panel : null}
         </div>
       ))}

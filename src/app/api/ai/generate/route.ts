@@ -3,7 +3,12 @@ import { z } from "zod";
 import { repairForm } from "@/core/ai/repair";
 import { AI_LIMITS, AiFormSchema } from "@/core/ai/schemas";
 import { createClient } from "@/lib/supabase/server";
-import { describeAiError, isAiConfigured, isRateLimitError, modelChain } from "@/server/ai/provider";
+import {
+  describeAiError,
+  isAiConfigured,
+  isRateLimitError,
+  modelChain,
+} from "@/server/ai/provider";
 import { GENERATE_SYSTEM, generatePrompt } from "@/server/ai/prompts";
 import { consumeQuota, finishRequest, quotaResponse } from "@/server/ai/quota";
 
@@ -17,7 +22,13 @@ import { consumeQuota, finishRequest, quotaResponse } from "@/server/ai/quota";
  */
 export const maxDuration = 60;
 
-const Body = z.object({ description: z.string().trim().min(10, "Describe the form in a few words.").max(AI_LIMITS.descriptionMax) });
+const Body = z.object({
+  description: z
+    .string()
+    .trim()
+    .min(10, "Describe the form in a few words.")
+    .max(AI_LIMITS.descriptionMax),
+});
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -25,7 +36,8 @@ export async function POST(request: Request) {
   if (!auth?.claims?.sub) return Response.json({ error: "Sign in to use AI." }, { status: 401 });
 
   const raw = await request.text();
-  if (raw.length > AI_LIMITS.descriptionMax * 2 + 200) return Response.json({ error: "That description is too long." }, { status: 413 });
+  if (raw.length > AI_LIMITS.descriptionMax * 2 + 200)
+    return Response.json({ error: "That description is too long." }, { status: 413 });
   let json: unknown;
   try {
     json = JSON.parse(raw);
@@ -33,11 +45,17 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid request." }, { status: 400 });
   }
   const body = Body.safeParse(json);
-  if (!body.success) return Response.json({ error: body.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
-  if (!isAiConfigured()) return Response.json({ error: "AI isn't configured on this server." }, { status: 503 });
+  if (!body.success)
+    return Response.json(
+      { error: body.error.issues[0]?.message ?? "Invalid request." },
+      { status: 400 },
+    );
+  if (!isAiConfigured())
+    return Response.json({ error: "AI isn't configured on this server." }, { status: 503 });
 
   const quota = await consumeQuota(supabase, "generate").catch(() => null);
-  if (!quota) return Response.json({ error: "Couldn't check your AI quota. Try again." }, { status: 503 });
+  if (!quota)
+    return Response.json({ error: "Couldn't check your AI quota. Try again." }, { status: 503 });
   if (!quota.allowed) return quotaResponse(quota);
 
   const startedAt = Date.now();
@@ -79,7 +97,9 @@ export async function POST(request: Request) {
           } catch {
             valid = false;
           }
-          await finishRequest(supabase, quota.requestId, startedAt, valid, choice.id).catch(() => {});
+          await finishRequest(supabase, quota.requestId, startedAt, valid, choice.id).catch(
+            () => {},
+          );
           try {
             controller.close();
           } catch {

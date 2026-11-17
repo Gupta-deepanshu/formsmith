@@ -17,15 +17,26 @@ const aiJob = {
       questions: [
         { id: "full_name", type: "shortText", label: "Full name", required: true },
         { id: "email", type: "email", label: "Email", required: true },
-        { id: "seniority", type: "dropdown", label: "Role level", required: true, options: ["Junior", "Mid", "Senior", "Lead", "Senior"] },
+        {
+          id: "seniority",
+          type: "dropdown",
+          label: "Role level",
+          required: true,
+          options: ["Junior", "Mid", "Senior", "Lead", "Senior"],
+        },
       ],
     },
     {
       id: "leadership",
       title: "Leadership",
       kind: "questions",
-      showIf: { match: "any", rules: [{ questionId: "seniority", operator: "in", values: ["senior", "Lead"] }] },
-      questions: [{ id: "q1", type: "textarea", label: "Tell us about leading a team", required: true }],
+      showIf: {
+        match: "any",
+        rules: [{ questionId: "seniority", operator: "in", values: ["senior", "Lead"] }],
+      },
+      questions: [
+        { id: "q1", type: "textarea", label: "Tell us about leading a team", required: true },
+      ],
     },
     { id: "review", title: "Review", kind: "review", questions: [] },
   ],
@@ -41,10 +52,14 @@ describe("repairForm", () => {
     if (role.type !== "dropdown") return;
     expect(role.options.map((o) => o.label)).toEqual(["Junior", "Mid", "Senior", "Lead"]); // deduped
     const senior = role.options.find((o) => o.label === "Senior")!.id;
-    expect(r.form.steps[1]!.visibleIf).toEqual({ any: [{ fieldId: role.id, op: "in", value: [senior, role.options[3]!.id] }] });
+    expect(r.form.steps[1]!.visibleIf).toEqual({
+      any: [{ fieldId: role.id, op: "in", value: [senior, role.options[3]!.id] }],
+    });
     expect(r.form.steps[1]!.fields[0]!.type).toBe("longText"); // alias
     expect(r.form.steps.at(-1)!.kind).toBe("review");
-    expect(computeVisibility(r.form, { [role.id]: senior }).steps.has(r.form.steps[1]!.id)).toBe(true);
+    expect(computeVisibility(r.form, { [role.id]: senior }).steps.has(r.form.steps[1]!.id)).toBe(
+      true,
+    );
   });
 
   it("is deterministic (stable ids for streaming)", () => {
@@ -62,7 +77,13 @@ describe("repairForm", () => {
             { id: "a", type: "hologram", label: "Second", required: false },
             { id: "b", type: "number", label: "Age", required: true, min: 10, max: 5 },
             { type: "email", required: true }, // no label -> skipped
-            { id: "c", type: "shortText", label: "Later", required: false, showIf: { match: "all", rules: [{ questionId: "d", operator: "isAnswered" }] } },
+            {
+              id: "c",
+              type: "shortText",
+              label: "Later",
+              required: false,
+              showIf: { match: "all", rules: [{ questionId: "d", operator: "isAnswered" }] },
+            },
             { id: "d", type: "shortText", label: "Forward target", required: false },
           ],
         },
@@ -83,7 +104,21 @@ describe("repairForm", () => {
   it("fails cleanly on garbage and keeps partial output usable", () => {
     expect(repairForm("nope").ok).toBe(false);
     expect(repairForm({ title: "x", steps: [] }).ok).toBe(false);
-    const partial = repairForm({ title: "Job", steps: [{ title: "Basics", questions: [{ id: "n", type: "shortText", label: "Name", required: true }, { id: "e", type: "em" }] }] }, { partial: true });
+    const partial = repairForm(
+      {
+        title: "Job",
+        steps: [
+          {
+            title: "Basics",
+            questions: [
+              { id: "n", type: "shortText", label: "Name", required: true },
+              { id: "e", type: "em" },
+            ],
+          },
+        ],
+      },
+      { partial: true },
+    );
     expect(partial.ok).toBe(true);
     if (partial.ok) expect(partial.form.steps[0]!.fields).toHaveLength(1);
   });
@@ -100,7 +135,11 @@ describe("applyAiEdit", () => {
     const nf = normalize(jobApplicationForm());
     const out = applyAiEdit(nf, [
       { op: "updateQuestion", questionId: "f_phone", changes: { required: false } },
-      { op: "addQuestion", stepId: "s_about", question: { id: "linkedin", type: "url", label: "LinkedIn profile", required: false } },
+      {
+        op: "addQuestion",
+        stepId: "s_about",
+        question: { id: "linkedin", type: "url", label: "LinkedIn profile", required: false },
+      },
     ]);
     expect(out.rejected).toEqual([]);
     expect(out.ops.map((o) => o.op)).toEqual(["addField"]); // phone was already optional: no-op dropped
@@ -112,15 +151,34 @@ describe("applyAiEdit", () => {
   it("matches questions by label, keeps option ids on update, and maps rule labels", () => {
     const nf = normalize(jobApplicationForm());
     const out = applyAiEdit(nf, [
-      { op: "updateQuestion", questionId: "Role level", changes: { options: ["Junior", "Mid-level", "Senior", "Staff / Principal", "Director"] } },
-      { op: "addQuestion", stepId: "s_experience", question: { id: "reports", type: "number", label: "Direct reports", required: false, showIf: { match: "all", rules: [{ questionId: "f_role", operator: "equals", value: "Director" }] } } },
+      {
+        op: "updateQuestion",
+        questionId: "Role level",
+        changes: { options: ["Junior", "Mid-level", "Senior", "Staff / Principal", "Director"] },
+      },
+      {
+        op: "addQuestion",
+        stepId: "s_experience",
+        question: {
+          id: "reports",
+          type: "number",
+          label: "Direct reports",
+          required: false,
+          showIf: {
+            match: "all",
+            rules: [{ questionId: "f_role", operator: "equals", value: "Director" }],
+          },
+        },
+      },
     ]);
     expect(out.rejected).toEqual([]);
     const role = out.form.fields.f_role!;
     if (role.type !== "dropdown") throw new Error("type");
     expect(role.options[0]!.id).toBe("o_junior");
     const director = role.options[4]!.id;
-    expect(out.form.fields.f_reports!.visibleIf).toEqual({ all: [{ fieldId: "f_role", op: "equals", value: director }] });
+    expect(out.form.fields.f_reports!.visibleIf).toEqual({
+      all: [{ fieldId: "f_role", op: "equals", value: director }],
+    });
   });
 
   it("rejects ops that introduce errors or target missing things, keeps the rest", () => {

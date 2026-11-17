@@ -9,7 +9,15 @@ import { PublicShell } from "@/features/public-form/PublicShell";
 
 export const metadata: Metadata = { title: "Form", robots: { index: false } };
 
-type Opened = { formId: string; slug: string; isDemo: boolean; versionId: string; version: number; schema: unknown; draft: PublicDraft | null };
+type Opened = {
+  formId: string;
+  slug: string;
+  isDemo: boolean;
+  versionId: string;
+  version: number;
+  schema: unknown;
+  draft: PublicDraft | null;
+};
 
 /** Public form. Reads the session (to resume a draft) and params, so it streams behind Suspense. */
 export default function PublicFormPage({ params }: PageProps<"/f/[slug]">) {
@@ -39,7 +47,15 @@ async function PublicFormData({ params }: { params: PageProps<"/f/[slug]">["para
       </Card>
     );
   }
-  return <PublicForm slug={opened.slug} versionId={opened.versionId} isDemo={opened.isDemo} form={loaded.form} draft={opened.draft} />;
+  return (
+    <PublicForm
+      slug={opened.slug}
+      versionId={opened.versionId}
+      isDemo={opened.isDemo}
+      form={loaded.form}
+      draft={opened.draft}
+    />
+  );
 }
 
 function FormSkeleton() {

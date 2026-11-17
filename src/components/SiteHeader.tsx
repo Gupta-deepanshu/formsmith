@@ -4,8 +4,14 @@ import { ThemeToggle } from "@/components/ui";
 
 export function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2 rounded-control font-semibold tracking-tight text-fg">
-      <span aria-hidden="true" className="grid size-7 place-items-center rounded-control bg-accent text-sm text-on-accent">
+    <Link
+      href="/"
+      className="flex items-center gap-2 rounded-control font-semibold tracking-tight text-fg"
+    >
+      <span
+        aria-hidden="true"
+        className="grid size-7 place-items-center rounded-control bg-accent text-sm text-on-accent"
+      >
         F
       </span>
       Formsmith

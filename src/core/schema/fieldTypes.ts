@@ -21,8 +21,24 @@ type FieldTypeMeta = {
   create: (id: string, label: string) => Field;
 };
 
-const TEXT_OPS = ["equals", "notEquals", "contains", "notContains", "isAnswered", "isEmpty"] as const;
-const ORDERED_OPS = ["equals", "notEquals", "gt", "gte", "lt", "lte", "isAnswered", "isEmpty"] as const;
+const TEXT_OPS = [
+  "equals",
+  "notEquals",
+  "contains",
+  "notContains",
+  "isAnswered",
+  "isEmpty",
+] as const;
+const ORDERED_OPS = [
+  "equals",
+  "notEquals",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "isAnswered",
+  "isEmpty",
+] as const;
 const CHOICE_OPS = ["equals", "notEquals", "in", "notIn", "isAnswered", "isEmpty"] as const;
 const CHOICES_OPS = ["contains", "notContains", "in", "notIn", "isAnswered", "isEmpty"] as const;
 const BOOL_OPS = ["equals", "isAnswered", "isEmpty"] as const;
@@ -35,18 +51,96 @@ export function defaultOptions(): ChoiceOption[] {
 }
 
 export const FIELD_TYPE_META: Record<FieldType, FieldTypeMeta> = {
-  shortText: { label: "Short text", answerKind: "text", operators: TEXT_OPS, create: (id, label) => ({ id, label, type: "shortText", required: false }) },
-  longText: { label: "Long text", answerKind: "text", operators: TEXT_OPS, create: (id, label) => ({ id, label, type: "longText", required: false }) },
-  email: { label: "Email", answerKind: "text", operators: TEXT_OPS, create: (id, label) => ({ id, label, type: "email", required: false }) },
-  phone: { label: "Phone", answerKind: "text", operators: TEXT_OPS, create: (id, label) => ({ id, label, type: "phone", required: false }) },
-  url: { label: "URL", answerKind: "text", operators: TEXT_OPS, create: (id, label) => ({ id, label, type: "url", required: false }) },
-  number: { label: "Number", answerKind: "number", operators: ORDERED_OPS, create: (id, label) => ({ id, label, type: "number", required: false }) },
-  date: { label: "Date", answerKind: "date", operators: ORDERED_OPS, create: (id, label) => ({ id, label, type: "date", required: false }) },
-  rating: { label: "Rating (1–5)", answerKind: "number", operators: ORDERED_OPS, create: (id, label) => ({ id, label, type: "rating", required: false, max: 5 }) },
-  singleChoice: { label: "Single choice", answerKind: "choice", operators: CHOICE_OPS, create: (id, label) => ({ id, label, type: "singleChoice", required: false, options: defaultOptions() }) },
-  dropdown: { label: "Dropdown", answerKind: "choice", operators: CHOICE_OPS, create: (id, label) => ({ id, label, type: "dropdown", required: false, options: defaultOptions() }) },
-  multipleChoice: { label: "Multiple choice", answerKind: "choices", operators: CHOICES_OPS, create: (id, label) => ({ id, label, type: "multipleChoice", required: false, options: defaultOptions() }) },
-  yesNo: { label: "Yes / No", answerKind: "boolean", operators: BOOL_OPS, create: (id, label) => ({ id, label, type: "yesNo", required: false }) },
+  shortText: {
+    label: "Short text",
+    answerKind: "text",
+    operators: TEXT_OPS,
+    create: (id, label) => ({ id, label, type: "shortText", required: false }),
+  },
+  longText: {
+    label: "Long text",
+    answerKind: "text",
+    operators: TEXT_OPS,
+    create: (id, label) => ({ id, label, type: "longText", required: false }),
+  },
+  email: {
+    label: "Email",
+    answerKind: "text",
+    operators: TEXT_OPS,
+    create: (id, label) => ({ id, label, type: "email", required: false }),
+  },
+  phone: {
+    label: "Phone",
+    answerKind: "text",
+    operators: TEXT_OPS,
+    create: (id, label) => ({ id, label, type: "phone", required: false }),
+  },
+  url: {
+    label: "URL",
+    answerKind: "text",
+    operators: TEXT_OPS,
+    create: (id, label) => ({ id, label, type: "url", required: false }),
+  },
+  number: {
+    label: "Number",
+    answerKind: "number",
+    operators: ORDERED_OPS,
+    create: (id, label) => ({ id, label, type: "number", required: false }),
+  },
+  date: {
+    label: "Date",
+    answerKind: "date",
+    operators: ORDERED_OPS,
+    create: (id, label) => ({ id, label, type: "date", required: false }),
+  },
+  rating: {
+    label: "Rating (1–5)",
+    answerKind: "number",
+    operators: ORDERED_OPS,
+    create: (id, label) => ({ id, label, type: "rating", required: false, max: 5 }),
+  },
+  singleChoice: {
+    label: "Single choice",
+    answerKind: "choice",
+    operators: CHOICE_OPS,
+    create: (id, label) => ({
+      id,
+      label,
+      type: "singleChoice",
+      required: false,
+      options: defaultOptions(),
+    }),
+  },
+  dropdown: {
+    label: "Dropdown",
+    answerKind: "choice",
+    operators: CHOICE_OPS,
+    create: (id, label) => ({
+      id,
+      label,
+      type: "dropdown",
+      required: false,
+      options: defaultOptions(),
+    }),
+  },
+  multipleChoice: {
+    label: "Multiple choice",
+    answerKind: "choices",
+    operators: CHOICES_OPS,
+    create: (id, label) => ({
+      id,
+      label,
+      type: "multipleChoice",
+      required: false,
+      options: defaultOptions(),
+    }),
+  },
+  yesNo: {
+    label: "Yes / No",
+    answerKind: "boolean",
+    operators: BOOL_OPS,
+    create: (id, label) => ({ id, label, type: "yesNo", required: false }),
+  },
 };
 
 export function isChoiceField(f: Field): f is Extract<Field, { options: ChoiceOption[] }> {
@@ -69,7 +163,10 @@ export function allowedKeys(type: FieldType): ReadonlySet<string> {
  * Keeps everything that is still meaningful, so changing type back and forth via undo
  * restores the original exactly (undo restores dropped keys explicitly).
  */
-export function normaliseFieldShape(raw: Record<string, unknown>, type: FieldType): Record<string, unknown> {
+export function normaliseFieldShape(
+  raw: Record<string, unknown>,
+  type: FieldType,
+): Record<string, unknown> {
   const keys = allowedKeys(type);
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(raw)) {

@@ -15,22 +15,33 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   return (
     <>
       <SiteHeader />
-      <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12">
+      <main
+        id="main"
+        className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12"
+      >
         <Card className="flex flex-col gap-6 p-6 sm:p-8">
           <div className="flex flex-col gap-2">
             <h1 className="text-xl font-semibold">Sign in to Formsmith</h1>
-            <p className="text-sm text-fg-muted">Create forms with AI, publish them, and see responses.</p>
+            <p className="text-sm text-fg-muted">
+              Create forms with AI, publish them, and see responses.
+            </p>
           </div>
           <Suspense fallback={<Skeleton className="h-12 w-full" />}>
             <SignInActions searchParams={searchParams} />
           </Suspense>
           <div className="border-t border-line pt-4 text-sm text-fg-muted">
             Just looking?{" "}
-            <Link href="/try" className="font-medium text-accent underline-offset-4 hover:underline">
+            <Link
+              href="/try"
+              className="font-medium text-accent underline-offset-4 hover:underline"
+            >
               Try the editor
             </Link>{" "}
             or{" "}
-            <Link href="/f/demo" className="font-medium text-accent underline-offset-4 hover:underline">
+            <Link
+              href="/f/demo"
+              className="font-medium text-accent underline-offset-4 hover:underline"
+            >
               fill in the demo form
             </Link>
             , no account needed.
@@ -41,7 +52,11 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   );
 }
 
-async function SignInActions({ searchParams }: { searchParams: PageProps<"/sign-in">["searchParams"] }) {
+async function SignInActions({
+  searchParams,
+}: {
+  searchParams: PageProps<"/sign-in">["searchParams"];
+}) {
   const sp = await searchParams;
   const next = typeof sp.next === "string" ? sp.next : undefined;
   return (

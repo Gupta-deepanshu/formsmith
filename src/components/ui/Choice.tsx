@@ -13,7 +13,12 @@ const rowClasses =
 
 const boxClasses = "size-4 shrink-0 accent-[var(--accent)] focus-visible:outline-none";
 
-export function Checkbox({ label, description, className, ...props }: Omit<ComponentProps<"input">, "type"> & { label: ReactNode; description?: ReactNode }) {
+export function Checkbox({
+  label,
+  description,
+  className,
+  ...props
+}: Omit<ComponentProps<"input">, "type"> & { label: ReactNode; description?: ReactNode }) {
   const id = useId();
   return (
     <label htmlFor={props.id ?? id} className={cn(rowClasses, className)}>
@@ -56,7 +61,15 @@ export function RadioGroup({
       {options.map((o, i) => {
         const id = `${name}-${o.value}`;
         return (
-          <label key={o.value} htmlFor={id} className={cn(rowClasses, invalid && "border-danger", layout === "inline" && "flex-1 justify-center")}>
+          <label
+            key={o.value}
+            htmlFor={id}
+            className={cn(
+              rowClasses,
+              invalid && "border-danger",
+              layout === "inline" && "flex-1 justify-center",
+            )}
+          >
             <input
               ref={i === 0 ? ref : undefined}
               type="radio"
@@ -80,7 +93,19 @@ export function RadioGroup({
   );
 }
 
-export function Switch({ checked, onChange, label, disabled, className }: { checked: boolean; onChange: (next: boolean) => void; label: ReactNode; disabled?: boolean; className?: string }) {
+export function Switch({
+  checked,
+  onChange,
+  label,
+  disabled,
+  className,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label: ReactNode;
+  disabled?: boolean;
+  className?: string;
+}) {
   const id = useId();
   return (
     <div className={cn("flex items-center justify-between gap-3", className)}>
@@ -94,9 +119,18 @@ export function Switch({ checked, onChange, label, disabled, className }: { chec
         aria-labelledby={id}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={cn("relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border transition-colors duration-150 disabled:opacity-50", checked ? "border-accent bg-accent" : "border-line-strong bg-subtle")}
+        className={cn(
+          "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border transition-colors duration-150 disabled:opacity-50",
+          checked ? "border-accent bg-accent" : "border-line-strong bg-subtle",
+        )}
       >
-        <span aria-hidden="true" className={cn("inline-block size-4 rounded-full bg-surface shadow transition-transform duration-150", checked ? "translate-x-5" : "translate-x-1")} />
+        <span
+          aria-hidden="true"
+          className={cn(
+            "inline-block size-4 rounded-full bg-surface shadow transition-transform duration-150",
+            checked ? "translate-x-5" : "translate-x-1",
+          )}
+        />
       </button>
     </div>
   );

@@ -29,7 +29,9 @@ export async function listMyForms(): Promise<FormSummary[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("forms")
-    .select("id, slug, title, updated_at, published_version_id, published:form_versions!forms_published_version_fk(version, published_at), responses(count)")
+    .select(
+      "id, slug, title, updated_at, published_version_id, published:form_versions!forms_published_version_fk(version, published_at), responses(count)",
+    )
     .eq("responses.status", "submitted")
     .order("updated_at", { ascending: false });
   if (error) throw new Error("Couldn't load your forms");
@@ -39,7 +41,9 @@ export async function listMyForms(): Promise<FormSummary[]> {
     title: r.title,
     status: r.published_version_id ? "published" : "draft",
     // The draft changed after the live version was cut (allow 2s for the publish write itself).
-    hasUnpublishedChanges: !!r.published && new Date(r.updated_at).getTime() - new Date(r.published.published_at).getTime() > 2000,
+    hasUnpublishedChanges:
+      !!r.published &&
+      new Date(r.updated_at).getTime() - new Date(r.published.published_at).getTime() > 2000,
     publishedVersion: r.published?.version ?? null,
     responseCount: r.responses[0]?.count ?? 0,
     updatedAt: r.updated_at,
@@ -61,11 +65,20 @@ export async function getFormForEdit(id: string): Promise<FormForEdit | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("forms")
-    .select("id, slug, title, draft_schema, updated_at, published:form_versions!forms_published_version_fk(version, published_at, schema)")
+    .select(
+      "id, slug, title, draft_schema, updated_at, published:form_versions!forms_published_version_fk(version, published_at, schema)",
+    )
     .eq("id", id)
     .maybeSingle();
   if (error || !data) return null;
-  const row = data as unknown as { id: string; slug: string; title: string; draft_schema: Json; updated_at: string; published: { version: number; published_at: string; schema: Json } | null };
+  const row = data as unknown as {
+    id: string;
+    slug: string;
+    title: string;
+    draft_schema: Json;
+    updated_at: string;
+    published: { version: number; published_at: string; schema: Json } | null;
+  };
   return {
     id: row.id,
     slug: row.slug,

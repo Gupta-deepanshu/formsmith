@@ -27,7 +27,10 @@ const lc = (s: string) => s.trim().toLowerCase();
 
 function findField(nf: NormalizedForm, ref: string | undefined): Field | undefined {
   if (!ref) return undefined;
-  return nf.fields[ref] ?? Object.values(nf.fields).find((f) => lc(f.id) === lc(ref) || lc(f.label) === lc(ref));
+  return (
+    nf.fields[ref] ??
+    Object.values(nf.fields).find((f) => lc(f.id) === lc(ref) || lc(f.label) === lc(ref))
+  );
 }
 function findStepId(nf: NormalizedForm, ref: string | undefined): string | undefined {
   if (!ref) return undefined;
@@ -40,14 +43,16 @@ function lastQuestionsStep(nf: NormalizedForm): string | undefined {
 
 function refIndexFor(nf: NormalizedForm) {
   const idx = emptyRefIndex();
-  for (const sid of nf.stepOrder) for (const fid of nf.steps[sid]!.fieldIds) registerField(idx, nf.fields[fid]!);
+  for (const sid of nf.stepOrder)
+    for (const fid of nf.steps[sid]!.fieldIds) registerField(idx, nf.fields[fid]!);
   return idx;
 }
 
 function errorKeys(nf: NormalizedForm): Map<string, string> {
   const v = validateForm(denormalize(nf));
   const out = new Map<string, string>();
-  for (const i of v.issues) if (i.severity === "error") out.set(`${i.code}|${i.targetId ?? ""}|${i.message}`, i.message);
+  for (const i of v.issues)
+    if (i.severity === "error") out.set(`${i.code}|${i.targetId ?? ""}|${i.message}`, i.message);
   return out;
 }
 
@@ -95,7 +100,9 @@ function convert(nf: NormalizedForm, op: AiEditOp, alloc: IdAllocator): PatchOp[
         }
       }
       const changes = fieldDiff(existing, next);
-      return Object.keys(changes).length ? [{ op: "updateField", fieldId: existing.id, changes }] : [];
+      return Object.keys(changes).length
+        ? [{ op: "updateField", fieldId: existing.id, changes }]
+        : [];
     }
     case "removeQuestion": {
       const f = findField(nf, op.questionId);
@@ -105,13 +112,25 @@ function convert(nf: NormalizedForm, op: AiEditOp, alloc: IdAllocator): PatchOp[
       const f = findField(nf, op.questionId);
       if (!f) return `Question "${op.questionId}" not found.`;
       const toStepId = findStepId(nf, op.targetStepId) ?? locateField(nf, f.id)!.stepId;
-      return [{ op: "moveField", fieldId: f.id, toStepId, toIndex: Math.max(0, op.position ?? nf.steps[toStepId]!.fieldIds.length) }];
+      return [
+        {
+          op: "moveField",
+          fieldId: f.id,
+          toStepId,
+          toIndex: Math.max(0, op.position ?? nf.steps[toStepId]!.fieldIds.length),
+        },
+      ];
     }
     case "addStep": {
       const s = op.step;
       const title = s?.title?.trim().slice(0, LIMITS.titleMax);
       if (!title) return "The new step needs a title.";
-      const step: Step = { id: alloc.take(s?.id, title, "s"), title, kind: s?.kind === "review" && !s.questions?.length ? "review" : "questions", fields: [] };
+      const step: Step = {
+        id: alloc.take(s?.id, title, "s"),
+        title,
+        kind: s?.kind === "review" && !s.questions?.length ? "review" : "questions",
+        fields: [],
+      };
       if (s?.description) step.description = s.description.slice(0, LIMITS.helpMax);
       const idx = refIndexFor(nf);
       const cond = buildCondition(s?.showIf, idx);
@@ -135,7 +154,10 @@ function convert(nf: NormalizedForm, op: AiEditOp, alloc: IdAllocator): PatchOp[
       const s = op.step ?? {};
       const changes: Record<string, unknown> = {};
       if (s.title?.trim()) changes.title = s.title.trim().slice(0, LIMITS.titleMax);
-      if (s.description !== undefined) changes.description = s.description.trim() ? s.description.slice(0, LIMITS.helpMax) : undefined;
+      if (s.description !== undefined)
+        changes.description = s.description.trim()
+          ? s.description.slice(0, LIMITS.helpMax)
+          : undefined;
       if (s.showIf !== undefined) changes.visibleIf = buildCondition(s.showIf, refIndexFor(nf));
       return Object.keys(changes).length ? [{ op: "updateStep", stepId, changes }] : [];
     }
@@ -146,21 +168,31 @@ function convert(nf: NormalizedForm, op: AiEditOp, alloc: IdAllocator): PatchOp[
     case "moveStep": {
       const stepId = findStepId(nf, op.stepId);
       if (!stepId) return `Step "${op.stepId}" not found.`;
-      return [{ op: "moveStep", stepId, toIndex: Math.max(0, op.position ?? nf.stepOrder.length - 1) }];
+      return [
+        { op: "moveStep", stepId, toIndex: Math.max(0, op.position ?? nf.stepOrder.length - 1) },
+      ];
     }
     case "updateForm": {
       const f = op.form ?? {};
       const changes: Record<string, unknown> = {};
       if (f.title?.trim()) changes.title = f.title.trim().slice(0, LIMITS.titleMax);
-      if (f.description !== undefined) changes.description = f.description.trim() ? f.description.slice(0, LIMITS.helpMax) : undefined;
-      if (f.submitLabel?.trim()) changes.settings = { ...nf.meta.settings, submitLabel: f.submitLabel.trim().slice(0, 40) };
+      if (f.description !== undefined)
+        changes.description = f.description.trim()
+          ? f.description.slice(0, LIMITS.helpMax)
+          : undefined;
+      if (f.submitLabel?.trim())
+        changes.settings = { ...nf.meta.settings, submitLabel: f.submitLabel.trim().slice(0, 40) };
       return Object.keys(changes).length ? [{ op: "updateForm", changes }] : [];
     }
   }
 }
 
 export function applyAiEdit(nf: NormalizedForm, aiOps: readonly AiEditOp[]): AiEditOutcome {
-  const alloc = new IdAllocator([...Object.keys(nf.fields), ...nf.stepOrder, ...Object.values(nf.fields).flatMap((f) => ("options" in f ? f.options.map((o) => o.id) : []))]);
+  const alloc = new IdAllocator([
+    ...Object.keys(nf.fields),
+    ...nf.stepOrder,
+    ...Object.values(nf.fields).flatMap((f) => ("options" in f ? f.options.map((o) => o.id) : [])),
+  ]);
   let form = nf;
   let baseline = errorKeys(form);
   const ops: PatchOp[] = [];
@@ -174,7 +206,10 @@ export function applyAiEdit(nf: NormalizedForm, aiOps: readonly AiEditOp[]): AiE
     try {
       next = applyOps(form, converted).form;
     } catch (e) {
-      return rejected.push({ index, reason: e instanceof PatchError ? e.message : "Couldn't apply this change." });
+      return rejected.push({
+        index,
+        reason: e instanceof PatchError ? e.message : "Couldn't apply this change.",
+      });
     }
     const after = errorKeys(next);
     const introduced = [...after].find(([k]) => !baseline.has(k));

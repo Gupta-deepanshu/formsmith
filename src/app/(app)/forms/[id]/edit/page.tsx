@@ -41,7 +41,11 @@ async function EditorData({ params }: { params: PageProps<"/forms/[id]/edit">["p
 
 function EditorSkeleton() {
   return (
-    <div className="mx-auto grid w-full max-w-[1600px] gap-6 p-4 lg:grid-cols-[300px_1fr_340px]" aria-busy="true" aria-label="Loading editor">
+    <div
+      className="mx-auto grid w-full max-w-[1600px] gap-6 p-4 lg:grid-cols-[300px_1fr_340px]"
+      aria-busy="true"
+      aria-label="Loading editor"
+    >
       <Skeleton className="h-96" />
       <Skeleton className="h-[32rem]" />
       <Skeleton className="h-96" />

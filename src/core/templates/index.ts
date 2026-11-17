@@ -36,8 +36,20 @@ export const jobApplicationForm = (): FormDefinition => ({
       kind: "questions",
       fields: [
         { id: "f_name", type: "shortText", label: "Full name", required: true, maxLength: 120 },
-        { id: "f_email", type: "email", label: "Email", required: true, placeholder: "you@example.com" },
-        { id: "f_phone", type: "phone", label: "Phone", required: false, helpText: "Include your country code." },
+        {
+          id: "f_email",
+          type: "email",
+          label: "Email",
+          required: true,
+          placeholder: "you@example.com",
+        },
+        {
+          id: "f_phone",
+          type: "phone",
+          label: "Phone",
+          required: false,
+          helpText: "Include your country code.",
+        },
       ],
     },
     {
@@ -45,7 +57,13 @@ export const jobApplicationForm = (): FormDefinition => ({
       title: "Experience",
       kind: "questions",
       fields: [
-        { id: "f_resume", type: "url", label: "Resume link", required: true, placeholder: "https://" },
+        {
+          id: "f_resume",
+          type: "url",
+          label: "Resume link",
+          required: true,
+          placeholder: "https://",
+        },
         {
           id: "f_role",
           type: "dropdown",
@@ -58,7 +76,15 @@ export const jobApplicationForm = (): FormDefinition => ({
             { id: "o_staff", label: "Staff / Principal" },
           ],
         },
-        { id: "f_years", type: "number", label: "Years of experience", required: true, min: 0, max: 60, integer: true },
+        {
+          id: "f_years",
+          type: "number",
+          label: "Years of experience",
+          required: true,
+          min: 0,
+          max: 60,
+          integer: true,
+        },
       ],
     },
     {
@@ -68,14 +94,34 @@ export const jobApplicationForm = (): FormDefinition => ({
       kind: "questions",
       visibleIf: { any: [{ fieldId: "f_role", op: "in", value: ["o_senior", "o_staff"] }] },
       fields: [
-        { id: "f_lead_conflict", type: "longText", label: "Describe a time you resolved a disagreement in your team.", required: true, minLength: 50 },
-        { id: "f_lead_mentor", type: "longText", label: "How do you approach mentoring?", required: true, minLength: 50 },
-        { id: "f_lead_decision", type: "longText", label: "Tell us about a technical decision you'd make differently today.", required: false },
+        {
+          id: "f_lead_conflict",
+          type: "longText",
+          label: "Describe a time you resolved a disagreement in your team.",
+          required: true,
+          minLength: 50,
+        },
+        {
+          id: "f_lead_mentor",
+          type: "longText",
+          label: "How do you approach mentoring?",
+          required: true,
+          minLength: 50,
+        },
+        {
+          id: "f_lead_decision",
+          type: "longText",
+          label: "Tell us about a technical decision you'd make differently today.",
+          required: false,
+        },
       ],
     },
     { id: "s_review", title: "Review your answers", kind: "review", fields: [] },
   ],
-  settings: { submitLabel: "Send application", confirmation: { title: "Application received", message: "We'll be in touch within a week." } },
+  settings: {
+    submitLabel: "Send application",
+    confirmation: { title: "Application received", message: "We'll be in touch within a week." },
+  },
 });
 
 export const feedbackForm = (): FormDefinition => ({
@@ -87,7 +133,15 @@ export const feedbackForm = (): FormDefinition => ({
       title: "Your experience",
       kind: "questions",
       fields: [
-        { id: "f_rating", type: "rating", label: "How would you rate the product overall?", required: true, max: 5, lowLabel: "Poor", highLabel: "Excellent" },
+        {
+          id: "f_rating",
+          type: "rating",
+          label: "How would you rate the product overall?",
+          required: true,
+          max: 5,
+          lowLabel: "Poor",
+          highLabel: "Excellent",
+        },
         {
           id: "f_used",
           type: "multipleChoice",
@@ -100,7 +154,13 @@ export const feedbackForm = (): FormDefinition => ({
             { id: "o_export", label: "CSV export" },
           ],
         },
-        { id: "f_low_reason", type: "longText", label: "What could we do better?", required: true, visibleIf: { all: [{ fieldId: "f_rating", op: "lte", value: 2 }] } },
+        {
+          id: "f_low_reason",
+          type: "longText",
+          label: "What could we do better?",
+          required: true,
+          visibleIf: { all: [{ fieldId: "f_rating", op: "lte", value: 2 }] },
+        },
       ],
     },
     {
@@ -108,8 +168,19 @@ export const feedbackForm = (): FormDefinition => ({
       title: "Follow-up",
       kind: "questions",
       fields: [
-        { id: "f_contact_ok", type: "yesNo", label: "Can we contact you about your feedback?", required: true },
-        { id: "f_contact_email", type: "email", label: "Email", required: true, visibleIf: { all: [{ fieldId: "f_contact_ok", op: "equals", value: true }] } },
+        {
+          id: "f_contact_ok",
+          type: "yesNo",
+          label: "Can we contact you about your feedback?",
+          required: true,
+        },
+        {
+          id: "f_contact_email",
+          type: "email",
+          label: "Email",
+          required: true,
+          visibleIf: { all: [{ fieldId: "f_contact_ok", op: "equals", value: true }] },
+        },
       ],
     },
   ],
@@ -127,7 +198,13 @@ export const eventRegistrationForm = (): FormDefinition => ({
       fields: [
         { id: "f_name", type: "shortText", label: "Name", required: true },
         { id: "f_email", type: "email", label: "Email", required: true },
-        { id: "f_date", type: "date", label: "Which day will you attend?", required: true, minDate: "2026-01-01" },
+        {
+          id: "f_date",
+          type: "date",
+          label: "Which day will you attend?",
+          required: true,
+          minDate: "2026-01-01",
+        },
         {
           id: "f_ticket",
           type: "singleChoice",
@@ -139,7 +216,13 @@ export const eventRegistrationForm = (): FormDefinition => ({
             { id: "o_speaker", label: "Speaker" },
           ],
         },
-        { id: "f_site", type: "url", label: "Talk or portfolio link", required: false, visibleIf: { all: [{ fieldId: "f_ticket", op: "equals", value: "o_speaker" }] } },
+        {
+          id: "f_site",
+          type: "url",
+          label: "Talk or portfolio link",
+          required: false,
+          visibleIf: { all: [{ fieldId: "f_ticket", op: "equals", value: "o_speaker" }] },
+        },
       ],
     },
     { id: "s_review", title: "Check and confirm", kind: "review", fields: [] },
@@ -149,9 +232,43 @@ export const eventRegistrationForm = (): FormDefinition => ({
 
 export const TEMPLATES = [
   { key: "blank", name: "Blank form", keywords: [] as string[], build: blankForm },
-  { key: "job", name: "Job application", keywords: ["job", "application", "apply", "candidate", "hiring", "role", "resume", "cv", "recruit"], build: jobApplicationForm },
-  { key: "feedback", name: "Product feedback", keywords: ["feedback", "survey", "rating", "satisfaction", "nps", "review", "customer"], build: feedbackForm },
-  { key: "event", name: "Event registration", keywords: ["event", "registration", "register", "rsvp", "ticket", "conference", "meetup", "attend"], build: eventRegistrationForm },
+  {
+    key: "job",
+    name: "Job application",
+    keywords: [
+      "job",
+      "application",
+      "apply",
+      "candidate",
+      "hiring",
+      "role",
+      "resume",
+      "cv",
+      "recruit",
+    ],
+    build: jobApplicationForm,
+  },
+  {
+    key: "feedback",
+    name: "Product feedback",
+    keywords: ["feedback", "survey", "rating", "satisfaction", "nps", "review", "customer"],
+    build: feedbackForm,
+  },
+  {
+    key: "event",
+    name: "Event registration",
+    keywords: [
+      "event",
+      "registration",
+      "register",
+      "rsvp",
+      "ticket",
+      "conference",
+      "meetup",
+      "attend",
+    ],
+    build: eventRegistrationForm,
+  },
 ] as const;
 
 export type TemplateKey = (typeof TEMPLATES)[number]["key"];

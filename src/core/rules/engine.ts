@@ -1,4 +1,11 @@
-import type { AnswerValue, Answers, Clause, Condition, Field, FormDefinition } from "../schema/definition";
+import type {
+  AnswerValue,
+  Answers,
+  Clause,
+  Condition,
+  Field,
+  FormDefinition,
+} from "../schema/definition";
 import { FIELD_TYPE_META, type AnswerKind } from "../schema/fieldTypes";
 
 /**
@@ -57,7 +64,11 @@ function compareOrdered(kind: AnswerKind, answer: AnswerValue, target: unknown):
  * "Show if role is not Intern" stays hidden until a role is picked. Use
  * isEmpty / isAnswered to branch on "not answered yet".
  */
-export function evaluateClause(clause: Clause, answers: Answers, fieldsById: ReadonlyMap<string, Field>): boolean {
+export function evaluateClause(
+  clause: Clause,
+  answers: Answers,
+  fieldsById: ReadonlyMap<string, Field>,
+): boolean {
   const field = fieldsById.get(clause.fieldId);
   const answer = answers[clause.fieldId];
   const empty = isEmptyAnswer(answer);
@@ -75,21 +86,33 @@ export function evaluateClause(clause: Clause, answers: Answers, fieldsById: Rea
       let eq: boolean;
       if (kind === "boolean") eq = answer === (target === true || target === "true");
       else if (kind === "number") eq = compareOrdered(kind, answer, target) === 0;
-      else if (kind === "text") eq = typeof answer === "string" && typeof target === "string" && norm(answer) === norm(target);
-      else if (kind === "choices") eq = Array.isArray(answer) && answer.length === list.length && list.every((v) => answer.includes(v));
+      else if (kind === "text")
+        eq =
+          typeof answer === "string" && typeof target === "string" && norm(answer) === norm(target);
+      else if (kind === "choices")
+        eq =
+          Array.isArray(answer) &&
+          answer.length === list.length &&
+          list.every((v) => answer.includes(v));
       else eq = answer === target;
       return clause.op === "equals" ? eq : !eq;
     }
     case "in":
     case "notIn": {
-      const hit = Array.isArray(answer) ? answer.some((v) => list.includes(v)) : list.includes(String(answer));
+      const hit = Array.isArray(answer)
+        ? answer.some((v) => list.includes(v))
+        : list.includes(String(answer));
       return clause.op === "in" ? hit : !hit;
     }
     case "contains":
     case "notContains": {
       let hit: boolean;
       if (Array.isArray(answer)) hit = list.some((v) => answer.includes(v));
-      else hit = typeof target === "string" && typeof answer === "string" && norm(answer).includes(norm(target));
+      else
+        hit =
+          typeof target === "string" &&
+          typeof answer === "string" &&
+          norm(answer).includes(norm(target));
       return clause.op === "contains" ? hit : !hit;
     }
     case "gt":
@@ -98,12 +121,22 @@ export function evaluateClause(clause: Clause, answers: Answers, fieldsById: Rea
     case "lte": {
       const c = compareOrdered(kind, answer, target);
       if (c === null) return false;
-      return clause.op === "gt" ? c > 0 : clause.op === "gte" ? c >= 0 : clause.op === "lt" ? c < 0 : c <= 0;
+      return clause.op === "gt"
+        ? c > 0
+        : clause.op === "gte"
+          ? c >= 0
+          : clause.op === "lt"
+            ? c < 0
+            : c <= 0;
     }
   }
 }
 
-export function evaluateCondition(cond: Condition | undefined, answers: Answers, fieldsById: ReadonlyMap<string, Field>): boolean {
+export function evaluateCondition(
+  cond: Condition | undefined,
+  answers: Answers,
+  fieldsById: ReadonlyMap<string, Field>,
+): boolean {
   if (!cond) return true;
   if ("all" in cond) return cond.all.every((c) => evaluateClause(c, answers, fieldsById));
   return cond.any.some((c) => evaluateClause(c, answers, fieldsById));
@@ -140,7 +173,11 @@ export function computeVisibility(form: FormDefinition, answers: Answers): Visib
 }
 
 /** Drop answers to hidden or unknown fields. Run before review, validation and submit. */
-export function pruneHiddenAnswers(form: FormDefinition, answers: Answers, visibility = computeVisibility(form, answers)): Answers {
+export function pruneHiddenAnswers(
+  form: FormDefinition,
+  answers: Answers,
+  visibility = computeVisibility(form, answers),
+): Answers {
   const out: Answers = {};
   for (const id of visibility.fields) {
     const v = answers[id];
