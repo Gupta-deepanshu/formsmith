@@ -81,6 +81,53 @@ export function completionRate(responses: ResponseRecord[]): {
   };
 }
 
+export type DayCount = { /** Local calendar day, YYYY-MM-DD. */ day: string; count: number };
+
+const dayKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/**
+ * Events per calendar day for the `days` days ending on `now`'s day, oldest first, with
+ * zero-filled gaps. Days are in the viewer's local time zone (what "today" means to the
+ * reader). Empty, null and unparsable timestamps are skipped; so are ones outside the range.
+ */
+export function dailyCounts(
+  timestamps: readonly (string | null | undefined)[],
+  days: number,
+  now: Date = new Date(),
+): DayCount[] {
+  const out: DayCount[] = [];
+  const index = new Map<string, number>();
+  for (let i = days - 1; i >= 0; i--) {
+    const key = dayKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i));
+    index.set(key, out.length);
+    out.push({ day: key, count: 0 });
+  }
+  for (const t of timestamps) {
+    if (!t) continue;
+    const d = new Date(t);
+    if (Number.isNaN(d.getTime())) continue;
+    const i = index.get(dayKey(d));
+    if (i !== undefined) out[i]!.count++;
+  }
+  return out;
+}
+
+export type PeriodChange = {
+  current: number;
+  previous: number;
+  /** Relative change (0.25 = +25%); null when the previous period had nothing to compare to. */
+  change: number | null;
+};
+
+/** Last `period` days vs the `period` days before them (e.g. this week vs last week). */
+export function periodChange(daily: readonly DayCount[], period: number): PeriodChange {
+  const sum = (xs: readonly DayCount[]) => xs.reduce((n, d) => n + d.count, 0);
+  const current = sum(daily.slice(-period));
+  const previous = sum(daily.slice(-2 * period, -period));
+  return { current, previous, change: previous > 0 ? (current - previous) / previous : null };
+}
+
 export type ChoiceSummary = {
   fieldId: string;
   label: string;

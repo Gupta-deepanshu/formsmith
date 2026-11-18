@@ -3,8 +3,10 @@ import {
   choiceSummaries,
   completionRate,
   csvCell,
+  dailyCounts,
   funnel,
   mergedFields,
+  periodChange,
   toCsv,
   type ResponseRecord,
 } from "../analytics";
@@ -118,5 +120,52 @@ describe("csv", () => {
     expect(formatAnswer(fb[0]!, 4)).toBe("4 / 5");
     expect(formatAnswer(fb[1]!, ["o_ai", "o_export"])).toBe("AI assistant, CSV export");
     expect(formatAnswer(fb[3]!, false)).toBe("No");
+  });
+});
+
+describe("dailyCounts", () => {
+  // Built from local dates, so the test passes in any time zone.
+  const now = new Date(2026, 10, 18, 15, 0);
+  const at = (day: number, hour = 10) => new Date(2026, 10, day, hour).toISOString();
+
+  it("zero-fills the range, oldest first, ending today", () => {
+    const out = dailyCounts([], 3, now);
+    expect(out).toEqual([
+      { day: "2026-11-16", count: 0 },
+      { day: "2026-11-17", count: 0 },
+      { day: "2026-11-18", count: 0 },
+    ]);
+  });
+
+  it("buckets by local day and ignores empty, invalid and out-of-range timestamps", () => {
+    const out = dailyCounts(
+      [at(18, 0), at(18, 23), at(17), null, undefined, "", "not a date", at(1)],
+      3,
+      now,
+    );
+    expect(out.map((d) => d.count)).toEqual([0, 1, 2]);
+  });
+
+  it("crosses month boundaries", () => {
+    const out = dailyCounts([new Date(2026, 9, 31, 12).toISOString()], 20, now);
+    expect(out[0]!.day).toBe("2026-10-30");
+    expect(out.find((d) => d.day === "2026-10-31")!.count).toBe(1);
+  });
+});
+
+describe("periodChange", () => {
+  const days = (counts: number[]) => counts.map((count, i) => ({ day: String(i), count }));
+
+  it("compares the last period with the one before", () => {
+    expect(periodChange(days([1, 1, 2, 2]), 2)).toEqual({ current: 4, previous: 2, change: 1 });
+    expect(periodChange(days([4, 0, 1, 1]), 2)).toEqual({
+      current: 2,
+      previous: 4,
+      change: -0.5,
+    });
+  });
+
+  it("has no relative change when the previous period was empty", () => {
+    expect(periodChange(days([0, 0, 3, 0]), 2)).toEqual({ current: 3, previous: 0, change: null });
   });
 });

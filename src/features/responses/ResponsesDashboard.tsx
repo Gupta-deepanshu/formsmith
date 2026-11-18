@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
-import { HBarChart, StatTile } from "@/components/charts/HBarChart";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { AreaChart } from "@/components/charts/AreaChart";
+import { HBarChart } from "@/components/charts/HBarChart";
+import { StatTile, type StatTrend } from "@/components/charts/StatTile";
 import { buttonClasses, EmptyState, Icon, Select, Tabs } from "@/components/ui";
 import {
   choiceSummaries,
   completionRate,
+  dailyCounts,
   funnel,
   mergedFields,
+  periodChange,
   type FormDefinition,
   type ResponseRecord,
 } from "@/core";
@@ -169,37 +173,87 @@ export function ResponsesDashboard({
   );
 }
 
+/*
+ * "Today" for the trend charts. Read only in the browser (server snapshot = null): the
+ * server runs in UTC, the reader in their own zone, so computing day buckets on the server
+ * would mismatch on hydration and put late-evening responses on the wrong day.
+ * One Date per page load is a stable snapshot.
+ */
+let pageNow: Date | null = null;
+const getNow = () => (pageNow ??= new Date());
+const noSubscribe = () => () => {};
+
+const TREND_DAYS = 7;
+const CHART_DAYS = 30;
+
 export function Summary({
   base,
   fields,
   responses,
   formFor,
+  trends = true,
 }: {
   base: FormDefinition;
   fields: FormDefinition["steps"][number]["fields"];
   responses: ResponseRecord[];
   formFor: (versionId: string) => FormDefinition | undefined;
+  /** Week-over-week badges, sparklines and the per-day chart. Off for the demo (no timestamps). */
+  trends?: boolean;
 }) {
   const completion = useMemo(() => completionRate(responses), [responses]);
   const f = useMemo(() => funnel(base, responses, formFor), [base, responses, formFor]);
   const choices = useMemo(() => choiceSummaries(fields, responses), [fields, responses]);
+  const now = useSyncExternalStore(noSubscribe, getNow, () => null);
+
+  const series = useMemo(() => {
+    if (!trends || !now) return null;
+    const started = responses.map((r) => r.startedAt);
+    const submitted = responses.map((r) => r.submittedAt);
+    const trendOf = (stamps: (string | null)[]): StatTrend => {
+      const daily = dailyCounts(stamps, TREND_DAYS * 2, now);
+      return {
+        daily,
+        period: TREND_DAYS,
+        change: periodChange(daily, TREND_DAYS),
+        periodLabel: `Last ${TREND_DAYS} days vs the ${TREND_DAYS} before`,
+      };
+    };
+    return {
+      started: trendOf(started),
+      submitted: trendOf(submitted),
+      perDay: dailyCounts(submitted, CHART_DAYS, now),
+    };
+  }, [trends, now, responses]);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-3 sm:grid-cols-3">
         <StatTile
           label="Started"
-          value={completion.started.toLocaleString("en")}
+          value={completion.started}
           detail="Answered at least one question"
+          trend={series?.started}
         />
-        <StatTile label="Submitted" value={completion.submitted.toLocaleString("en")} />
+        <StatTile label="Submitted" value={completion.submitted} trend={series?.submitted} />
         <StatTile
           label="Completion rate"
-          value={`${Math.round(completion.rate * 100)}%`}
+          value={completion.rate}
+          format="percent"
           ratio={completion.rate}
           detail={`${plural(completion.submitted, "submission")} of ${plural(completion.started, "start")}`}
         />
       </div>
+
+      {series ? (
+        <section className="rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+          <AreaChart
+            title={`Submissions per day, last ${CHART_DAYS} days`}
+            description="Counted on the day each response was submitted, in your time zone."
+            data={series.perDay}
+            valueLabel="submissions"
+          />
+        </section>
+      ) : null}
 
       <section className="rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
         <HBarChart

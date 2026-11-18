@@ -123,39 +123,3 @@ export function HBarChart({
     </figure>
   );
 }
-
-/** Stat tile with a meter: label, headline value, and a thin bar for the ratio. */
-export function StatTile({
-  label,
-  value,
-  ratio,
-  detail,
-}: {
-  label: string;
-  value: string;
-  ratio?: number;
-  detail?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-2 rounded-card border border-line bg-surface p-4 shadow-card">
-      <p className="text-sm text-fg-muted">{label}</p>
-      <p className="text-2xl font-semibold tabular-nums">{value}</p>
-      {ratio !== undefined ? (
-        <span
-          role="meter"
-          aria-label={label}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(ratio * 100)}
-          className="block h-2 overflow-hidden rounded-full bg-accent-soft"
-        >
-          <span
-            className="block h-full origin-left rounded-full bg-accent"
-            style={{ transform: `scaleX(${ratio})` }}
-          />
-        </span>
-      ) : null}
-      {detail ? <p className="text-xs text-fg-muted">{detail}</p> : null}
-    </div>
-  );
-}

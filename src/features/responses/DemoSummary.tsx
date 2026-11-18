@@ -20,6 +20,7 @@ export function DemoSummary({
       fields={form.steps.flatMap((s) => s.fields)}
       responses={responses}
       formFor={formFor}
+      trends={false}
     />
   );
 }
