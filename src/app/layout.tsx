@@ -34,6 +34,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <head>
+        {/* We ship our own light/dark themes; tell Dark Reader not to re-colour them on top.
+            Written here (not via `metadata`) so it is in the first bytes Dark Reader sees. */}
+        <meta name="darkreader-lock" content="" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-full flex-col bg-canvas text-fg">
