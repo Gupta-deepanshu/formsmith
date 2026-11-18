@@ -1,9 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { Card, Skeleton } from "@/components/ui";
 import { SignInWithGoogle } from "@/features/auth/SignInWithGoogle";
 import { SiteHeader } from "@/components/SiteHeader";
+import { getOwner } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/safeNext";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -59,6 +62,8 @@ async function SignInActions({
 }) {
   const sp = await searchParams;
   const next = typeof sp.next === "string" ? sp.next : undefined;
+  // Already signed in as an owner: don't offer Google again, just continue.
+  if (await getOwner()) redirect(safeNextPath(next));
   return (
     <>
       {sp.error === "callback" ? (

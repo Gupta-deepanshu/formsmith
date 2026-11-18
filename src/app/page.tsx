@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
+import { AccountStatus } from "@/features/auth/AccountStatus";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { buttonClasses, Icon, type IconName } from "@/components/ui";
 import { HeroBackground } from "@/features/landing/HeroBackground";
@@ -12,12 +13,7 @@ export default function Home() {
     <>
       <SmoothScroll />
       <SiteHeader>
-        <Link
-          href="/sign-in"
-          className="rounded-control px-2 py-1 text-sm font-medium text-fg-muted hover:text-fg"
-        >
-          Sign in
-        </Link>
+        <AccountStatus />
       </SiteHeader>
       <main id="main" className="flex-1">
         {/* Full-width wrapper: the background spans the page and is clipped to the hero. */}
