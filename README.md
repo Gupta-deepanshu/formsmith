@@ -8,7 +8,7 @@ A portfolio project focused on frontend engineering: client state, a form schema
 
 ## Stack
 
-Next.js 16 (App Router, Cache Components) · React 19 · TypeScript (strict) · Tailwind CSS v4 · Supabase (Postgres, RLS, Google + anonymous auth) · Vercel AI SDK v7 with Gemini · Zustand · React Hook Form · TanStack Table v9 + Virtual · Vitest. No UI, chart, animation or icon libraries: components are hand-built in `src/components/ui`.
+Next.js 16 (App Router, Cache Components) · React 19 · TypeScript (strict) · Tailwind CSS v4 · Supabase (Postgres, RLS, Google + anonymous auth) · Vercel AI SDK v7 with Gemini · Zustand · React Hook Form · TanStack Table v9 + Virtual · Vitest. No UI kit, chart or icon libraries: components are hand-built in `src/components/ui` and charts are hand-drawn SVG. A few credited extras: Lenis (smooth scroll on the landing and demo pages), an adapted Kokonut UI theme switch (MIT) and the React Bits Molten Metal hero shader.
 
 ## Architecture
 
