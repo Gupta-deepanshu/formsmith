@@ -285,13 +285,145 @@
   }
 }
 
+/*
+ * Exit animations without a library: the main reason apps reach for Motion is animating
+ * something as it LEAVES. Three native ways, one per case:
+ * 1. Dialogs: CSS transitions on the <dialog> itself. @starting-style gives the enter
+ *    animation; `overlay` + `display` with transition-behavior: allow-discrete keep the
+ *    dialog in the top layer and visible until the exit transition has finished.
+ *    Browsers without `overlay` transitions just close instantly.
+ * 2. Toasts: a short `leaving` state in React (see Toast.tsx), then removal.
+ * 3. Form steps: the View Transitions API snapshots the old step and fades it out while
+ *    the new one plays its own enter animation (see FormRunner.tsx).
+ */
+dialog.fs-dialog {
+  opacity: 0;
+  translate: 0 6px;
+  transition:
+    opacity 150ms ease-out,
+    translate 150ms ease-out,
+    overlay 150ms ease-out allow-discrete,
+    display 150ms ease-out allow-discrete;
+}
+dialog.fs-dialog[data-variant="drawer"] {
+  translate: 24px 0;
+}
+dialog.fs-dialog[open] {
+  opacity: 1;
+  translate: 0 0;
+}
+@starting-style {
+  dialog.fs-dialog[open] {
+    opacity: 0;
+    translate: 0 6px;
+  }
+  dialog.fs-dialog[data-variant="drawer"][open] {
+    translate: 24px 0;
+  }
+}
+dialog.fs-dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity 150ms ease-out,
+    overlay 150ms ease-out allow-discrete,
+    display 150ms ease-out allow-discrete;
+}
+dialog.fs-dialog[open]::backdrop {
+  opacity: 1;
+}
+@starting-style {
+  dialog.fs-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+@keyframes fs-exit {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+@utility animate-exit {
+  animation: fs-exit 140ms ease-in both;
+}
+
+/* Step change: only the step area animates; the rest of the page doesn't cross-fade. */
+html[data-step-transition]::view-transition-old(root),
+html[data-step-transition]::view-transition-new(root) {
+  animation: none;
+}
+@keyframes fs-step-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes fs-step-out-back {
+  to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+::view-transition-old(form-step) {
+  animation: fs-step-out 120ms ease-in both;
+}
+html[data-step-transition="back"]::view-transition-old(form-step) {
+  animation-name: fs-step-out-back;
+}
+/* The new step is live and plays its own animate-enter, so its snapshot doesn't animate. */
+::view-transition-new(form-step) {
+  animation: none;
+}
+
+/*
+ * Confirmation check (after Kokonut's Particle Button, minus the particles): the circle pops
+ * in, then the tick draws itself. pathLength="1" on the path makes dasharray/offset a 0–1
+ * fraction, independent of the path's real length. One-off and celebratory, so it is
+ * allowed to run past the 200 ms interface budget.
+ */
+@keyframes fs-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes fs-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@utility@utility animate-pop {
+  animation: fs-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@utility animate-draw {
+  stroke-dasharray: 1;
+  animation: fs-draw 450ms cubic-bezier(0.65, 0, 0.35, 1) 250ms both;
+}
+/* Title, message and button rise in after the tick (delays set per element). */
+@keyframes fs-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@utility animate-rise {
+  animation: fs-rise 300ms ease-out var(--rise-delay, 0ms) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,
   ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    /* No waiting either: delayed animations (the drawn tick, the headline shine) would
+       otherwise sit in their start state for the length of the delay. */
+    animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
   /* A frozen shimmer would leave the text half-highlighted; show it plainly instead. */

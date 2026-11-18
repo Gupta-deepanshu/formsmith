@@ -1,7 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { useForm, useFormState, useWatch, type Resolver } from "react-hook-form";
 import { Button, Card, Icon, ProgressBar } from "@/components/ui";
 import {
@@ -58,6 +59,50 @@ function ruleDependencies(form: FormDefinition): string[] {
     s.fields.forEach((f) => add(f.visibleIf));
   }
   return [...ids];
+}
+
+/**
+ * Step change with an exit animation: the View Transitions API snapshots the old step, the
+ * new one is applied synchronously (flushSync, so the snapshot taken after the callback is
+ * the new step), and CSS fades the old snapshot out while the new step plays its own enter
+ * animation. The transition name goes on a stable wrapper and only for the length of the
+ * transition, so two runners on one page (editor + preview) never share a name.
+ * No API support, reduced motion, or a transition already running: change instantly.
+ * Lives outside the component because it touches document-level state (React lint rules).
+ */
+function runStepTransition(
+  wrapId: string,
+  dir: "forward" | "back",
+  apply: () => void,
+): Promise<void> {
+  const wrap = document.getElementById(wrapId);
+  const doc = document as Document & { activeViewTransition?: unknown };
+  if (
+    !wrap ||
+    typeof doc.startViewTransition !== "function" ||
+    doc.activeViewTransition ||
+    matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    apply();
+    return Promise.resolve();
+  }
+  const root = document.documentElement;
+  root.dataset.stepTransition = dir;
+  wrap.style.viewTransitionName = "form-step";
+  const done = () => {
+    delete root.dataset.stepTransition;
+    wrap.style.viewTransitionName = "";
+  };
+  try {
+    const transition = doc.startViewTransition(() => flushSync(apply));
+    transition.finished.then(done, done);
+    // If the transition is skipped, the update still runs; either way this settles.
+    return transition.updateCallbackDone.catch(() => {});
+  } catch {
+    done();
+    apply();
+    return Promise.resolve();
+  }
 }
 
 export function FormRunner(props: FormRunnerProps) {
@@ -126,6 +171,7 @@ export function FormRunner(props: FormRunnerProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const stepWrapId = useId();
   const firstRender = useRef(true);
 
   const { errors } = useFormState({ control });
@@ -177,7 +223,7 @@ export function FormRunner(props: FormRunnerProps) {
     headingRef.current?.focus({ preventScroll: false });
   }, [stepId]);
 
-  const goTo = (id: string, dir: "forward" | "back") => {
+  const applyStep = (id: string, dir: "forward" | "back") => {
     clearErrors();
     setSubmitError(null);
     setDirection(dir);
@@ -186,6 +232,10 @@ export function FormRunner(props: FormRunnerProps) {
     setUncontrolledStep(id);
     props.onStepChange?.(id);
   };
+
+  /** Step change with an exit animation (see runStepTransition). Resolves once applied. */
+  const goTo = (id: string, dir: "forward" | "back"): Promise<void> =>
+    runStepTransition(stepWrapId, dir, () => applyStep(id, dir));
 
   const submitAll = async () => {
     const answers = getValues();
@@ -239,17 +289,36 @@ export function FormRunner(props: FormRunnerProps) {
           className,
         )}
       >
-        <span className="grid size-12 place-items-center rounded-full bg-success-soft text-success">
-          <Icon name="check" className="size-6" />
+        {/* A short sequence (globals.css): circle pops in, tick draws, then title, message and
+            button fade up one after another. */}
+        <span className="grid size-14 animate-pop place-items-center rounded-full bg-success-soft text-success">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="size-7"
+          >
+            <path d="M3 8.5l3 3 7-7" pathLength={1} className="animate-draw" />
+          </svg>
         </span>
-        <h2 className="text-xl font-semibold" tabIndex={-1} ref={(el) => el?.focus()}>
+        <h2
+          className="animate-rise text-xl font-semibold [--rise-delay:450ms]"
+          tabIndex={-1}
+          ref={(el) => el?.focus()}
+        >
           {form.settings.confirmation.title}
         </h2>
         {form.settings.confirmation.message ? (
-          <p className="max-w-md text-fg-muted">{form.settings.confirmation.message}</p>
+          <p className="max-w-md animate-rise text-fg-muted [--rise-delay:550ms]">
+            {form.settings.confirmation.message}
+          </p>
         ) : null}
         {onRestart ? (
-          <Button className="mt-2" onClick={onRestart}>
+          <Button className="mt-2 animate-rise [--rise-delay:650ms]" onClick={onRestart}>
             {mode === "preview" ? "Restart preview" : "Submit another response"}
           </Button>
         ) : null}
@@ -278,61 +347,69 @@ export function FormRunner(props: FormRunnerProps) {
         />
       </div>
 
-      <div
-        key={stepId}
-        className={cn(
-          "flex flex-col gap-6",
-          direction === "forward" ? "animate-enter" : "animate-enter-back",
-        )}
-      >
-        <div className="flex flex-col gap-1">
-          <h2
-            id="step-heading"
-            ref={headingRef}
-            tabIndex={-1}
-            className="text-xl font-semibold tracking-tight focus-visible:outline-offset-4"
-          >
-            <span className="sr-only">
-              Step {stepIndex + 1} of {path.length}:{" "}
-            </span>
-            {step.title}
-          </h2>
-          {step.description ? <p className="text-fg-muted">{step.description}</p> : null}
-        </div>
-
-        <ErrorSummary errors={stepErrors} fields={stepFields} focusKey={focusKey} />
-        {submitError ? (
-          <p role="alert" className="rounded-control bg-danger-soft px-3 py-2 text-sm text-danger">
-            {submitError}
-          </p>
-        ) : null}
-
-        {step.kind === "review" ? (
-          <ReviewStep
-            form={form}
-            answers={getValues()}
-            visibility={computeVisibility(form, getValues())}
-            onEdit={(sid, fid) => {
-              goTo(sid, "back");
-              requestAnimationFrame(() =>
-                document.getElementById(fieldDomId(fid))?.scrollIntoView({ block: "center" }),
-              );
-            }}
-          />
-        ) : stepFields.length ? (
-          <div className="flex flex-col gap-6">
-            {stepFields.map((f) => (
-              <FieldControl
-                key={f.id}
-                field={f}
-                control={control}
-                highlighted={highlightFieldIds?.has(f.id)}
-              />
-            ))}
+      <div id={stepWrapId}>
+        <div
+          key={stepId}
+          className={cn(
+            "flex flex-col gap-6",
+            direction === "forward" ? "animate-enter" : "animate-enter-back",
+          )}
+        >
+          <div className="flex flex-col gap-1">
+            <h2
+              id="step-heading"
+              ref={headingRef}
+              tabIndex={-1}
+              className="text-xl font-semibold tracking-tight focus-visible:outline-offset-4"
+            >
+              <span className="sr-only">
+                Step {stepIndex + 1} of {path.length}:{" "}
+              </span>
+              {step.title}
+            </h2>
+            {step.description ? <p className="text-fg-muted">{step.description}</p> : null}
           </div>
-        ) : (
-          <p className="text-sm text-fg-muted">No questions on this step yet.</p>
-        )}
+
+          <ErrorSummary errors={stepErrors} fields={stepFields} focusKey={focusKey} />
+          {submitError ? (
+            <p
+              role="alert"
+              className="rounded-control bg-danger-soft px-3 py-2 text-sm text-danger"
+            >
+              {submitError}
+            </p>
+          ) : null}
+
+          {step.kind === "review" ? (
+            <ReviewStep
+              form={form}
+              answers={getValues()}
+              visibility={computeVisibility(form, getValues())}
+              onEdit={(sid, fid) => {
+                // Wait until the target step is actually in the DOM (a view transition
+                // applies it a frame later), then scroll to the field.
+                void goTo(sid, "back").then(() =>
+                  requestAnimationFrame(() =>
+                    document.getElementById(fieldDomId(fid))?.scrollIntoView({ block: "center" }),
+                  ),
+                );
+              }}
+            />
+          ) : stepFields.length ? (
+            <div className="flex flex-col gap-6">
+              {stepFields.map((f) => (
+                <FieldControl
+                  key={f.id}
+                  field={f}
+                  control={control}
+                  highlighted={highlightFieldIds?.has(f.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-fg-muted">No questions on this step yet.</p>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col-reverse gap-3 border-t border-line pt-4 sm:flex-row sm:items-center">

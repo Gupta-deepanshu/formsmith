@@ -79,8 +79,11 @@ export function Dialog({
       onClick={(e) => {
         if (e.target === ref.current) onClose(); // backdrop click
       }}
+      // `fs-dialog` (globals.css) animates both opening and closing with native CSS
+      // transitions; no exit state is needed in React.
+      data-variant={variant}
       className={cn(
-        "m-0 max-h-none max-w-none bg-transparent p-0 text-fg backdrop:animate-fade open:flex",
+        "fs-dialog m-0 max-h-none max-w-none bg-transparent p-0 text-fg open:flex",
         variant === "drawer"
           ? "ml-auto h-dvh w-full max-w-xl"
           : "m-auto w-[calc(100%-2rem)] items-center justify-center",
@@ -90,7 +93,7 @@ export function Dialog({
       <div
         className={cn(
           "flex w-full flex-col border border-line bg-surface shadow-card",
-          variant === "drawer" ? "h-full animate-fade" : "max-h-[85dvh] animate-enter rounded-card",
+          variant === "drawer" ? "h-full" : "max-h-[85dvh] rounded-card",
           className,
         )}
       >

@@ -25,7 +25,9 @@ export type ToastInput = {
   action?: { label: string; onClick: () => void };
   durationMs?: number;
 };
-type ToastItem = ToastInput & { id: number };
+/** `leaving`: playing its exit animation; removed from the list right after. */
+type ToastItem = ToastInput & { id: number; leaving?: boolean };
+const EXIT_MS = 150;
 
 type ToastApi = { show: (t: ToastInput) => number; dismiss: (id: number) => void };
 const ToastContext = createContext<ToastApi | null>(null);
@@ -39,7 +41,12 @@ export function useToast(): ToastApi {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
-  const dismiss = useCallback((id: number) => setItems((xs) => xs.filter((x) => x.id !== id)), []);
+  // Exit in two phases: mark as leaving (plays animate-exit), then remove. Removing a node
+  // from the live region is silent for screen readers, so the delay costs them nothing.
+  const dismiss = useCallback((id: number) => {
+    setItems((xs) => xs.map((x) => (x.id === id ? { ...x, leaving: true } : x)));
+    setTimeout(() => setItems((xs) => xs.filter((x) => x.id !== id)), EXIT_MS);
+  }, []);
   const show = useCallback((t: ToastInput) => {
     const id = nextId.current++;
     setItems((xs) => [...xs.slice(-3), { ...t, id }]);
@@ -81,10 +88,10 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
   const [paused, setPaused] = useState(false);
   const duration = item.durationMs ?? (item.action ? 8000 : 4500);
   useEffect(() => {
-    if (paused) return;
+    if (paused || item.leaving) return;
     const t = setTimeout(() => onDismiss(item.id), duration);
     return () => clearTimeout(t);
-  }, [paused, duration, item.id, onDismiss]);
+  }, [paused, duration, item.id, item.leaving, onDismiss]);
 
   return (
     <div
@@ -93,7 +100,8 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: (id: numbe
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
       className={cn(
-        "pointer-events-auto flex w-full max-w-sm animate-enter items-center gap-3 rounded-card border bg-surface px-4 py-3 text-sm shadow-card",
+        "flex w-full max-w-sm items-center gap-3 rounded-card border bg-surface px-4 py-3 text-sm shadow-card",
+        item.leaving ? "pointer-events-none animate-exit" : "pointer-events-auto animate-enter",
         item.tone === "danger"
           ? "border-danger"
           : item.tone === "success"
