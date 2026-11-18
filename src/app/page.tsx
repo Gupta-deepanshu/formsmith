@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SmoothScroll } from "@/components/SmoothScroll";
 import { buttonClasses, Card, Icon, type IconName } from "@/components/ui";
 
 /** Static landing page (prerendered). */
 export default function Home() {
   return (
     <>
+      <SmoothScroll />
       <SiteHeader>
         <Link
           href="/sign-in"

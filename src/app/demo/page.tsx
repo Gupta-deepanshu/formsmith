@@ -4,6 +4,7 @@ import { cacheLife } from "next/cache";
 import { Suspense } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SmoothScroll } from "@/components/SmoothScroll";
 import { buttonClasses, Skeleton } from "@/components/ui";
 import { loadForm, type Answers, type ResponseRecord } from "@/core";
 import { DemoSummary } from "@/features/responses/DemoSummary";
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default function DemoPage() {
   return (
     <>
+      <SmoothScroll />
       <SiteHeader />
       <main id="main" className="mx-auto w-full max-w-5xl px-4 py-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">

@@ -51,7 +51,7 @@ Everything else goes straight to Supabase from the client/server components unde
 
 ## UI rules
 
-- NO external UI/animation/chart/DnD/icon libraries. Tailwind + plain React. Own components in `src/components/ui` with library-like props.
+- NO external UI/animation/chart/DnD/icon libraries. Tailwind + plain React. One approved exception: `lenis` (smooth scroll), mounted only on `/` and `/demo` via `src/components/SmoothScroll.tsx`; don't spread it to app pages. Own components in `src/components/ui` with library-like props.
 - Prefer native elements: `<dialog>`, `<select>`, `<details>`, native inputs + validation attributes.
 - Neutral minimal design, one accent colour, tokens as CSS variables, light + dark.
 - Motion: CSS opacity/transform transitions only, < 200 ms, disabled under `prefers-reduced-motion`.
@@ -68,7 +68,7 @@ Everything else goes straight to Supabase from the client/server components unde
 
 ## Working style
 
-- pnpm. Allowed deps: next, react, typescript, tailwindcss, @supabase/supabase-js, @supabase/ssr, supabase (dev), zod, ai, @ai-sdk/google, @ai-sdk/react, zustand, react-hook-form, @hookform/resolvers, @tanstack/react-table, @tanstack/react-virtual, lint/format tooling, vitest. Ask before adding anything else.
+- pnpm. Allowed deps: next, react, typescript, tailwindcss, @supabase/supabase-js, @supabase/ssr, supabase (dev), zod, ai, @ai-sdk/google, @ai-sdk/react, zustand, react-hook-form, @hookform/resolvers, @tanstack/react-table, @tanstack/react-virtual, lenis (approved 2026-11-18, marketing pages only), lint/format tooling, vitest. Ask before adding anything else.
 - Run `pnpm typecheck && pnpm lint` (and `pnpm test` for core) after each major piece; keep them green.
 - Conventional commits at checkpoints. Never push unless asked.
 
