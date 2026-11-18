@@ -51,7 +51,7 @@ Everything else goes straight to Supabase from the client/server components unde
 
 ## UI rules
 
-- NO external UI/animation/chart/DnD/icon libraries. Tailwind + plain React. One approved exception: `lenis` (smooth scroll), mounted only on `/` and `/demo` via `src/components/SmoothScroll.tsx`; don't spread it to app pages. Own components in `src/components/ui` with library-like props.
+- NO external UI/animation/chart/DnD/icon libraries. Tailwind + plain React. One approved exception: `lenis` (smooth scroll), mounted only on `/` and `/demo` via `src/components/SmoothScroll.tsx`; don't spread it to app pages. Copied-in source (no npm deps, credit kept in file): Kokonut UI Switch Button (`ui/ThemeToggle.tsx`, MIT) and React Bits Molten Metal (`features/landing/MoltenMetal.tsx`, MIT + Commons Clause, landing hero only). Own components in `src/components/ui` with library-like props.
 - Prefer native elements: `<dialog>`, `<select>`, `<details>`, native inputs + validation attributes.
 - Neutral minimal design, one accent colour, tokens as CSS variables, light + dark.
 - Motion: CSS opacity/transform transitions only, < 200 ms, disabled under `prefers-reduced-motion`.

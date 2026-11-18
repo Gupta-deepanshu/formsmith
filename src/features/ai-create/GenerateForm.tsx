@@ -10,6 +10,7 @@ import { AI_LIMITS } from "@/core/ai/schemas";
 import { ensureSession } from "@/lib/supabase/client";
 import { aiErrorMessage, type AiErrorBody } from "@/features/ai-edit/AskAi";
 import { cn } from "@/lib/cn";
+import { AiProgress, aiStage } from "./AiProgress";
 
 /**
  * Describe -> AI drafts the form, streamed into a live outline as it's written.
@@ -210,13 +211,26 @@ export function GenerateForm({
           </div>
         ) : null}
 
+        {isLoading || outcome?.kind === "ok" ? (
+          <AiProgress
+            stage={aiStage({
+              loading: isLoading,
+              hasDraft: preview != null,
+              questionCount,
+              finished: outcome?.kind === "ok",
+            })}
+          />
+        ) : null}
+
         {shown ? (
           <FormOutline form={shown} streaming={isLoading} />
         ) : (
           <Card className="grid min-h-64 place-items-center text-center text-sm text-fg-muted">
-            {isLoading
-              ? "Waiting for the first questions…"
-              : "Your draft will appear here as the AI writes it."}
+            {isLoading ? (
+              <span className="text-shimmer">Waiting for the first questions…</span>
+            ) : (
+              "Your draft will appear here as the AI writes it."
+            )}
           </Card>
         )}
 

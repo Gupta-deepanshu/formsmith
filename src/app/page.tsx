@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SmoothScroll } from "@/components/SmoothScroll";
-import { buttonClasses, Card, Icon, type IconName } from "@/components/ui";
+import { buttonClasses, Icon, type IconName } from "@/components/ui";
+import { HeroBackground } from "@/features/landing/HeroBackground";
+import { HeroDemo } from "@/features/landing/HeroDemo";
+import { SpotlightCard } from "@/features/landing/SpotlightCard";
 
 /** Static landing page (prerendered). */
 export default function Home() {
@@ -17,38 +20,45 @@ export default function Home() {
         </Link>
       </SiteHeader>
       <main id="main" className="flex-1">
-        <section className="mx-auto flex w-full max-w-4xl flex-col items-center gap-6 px-4 pt-16 pb-12 text-center sm:pt-24">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-xs text-fg-muted">
-            <Icon name="sparkle" className="text-accent" /> AI writes the first draft. You stay in
-            control.
-          </span>
-          <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            Describe a form. Get a form.
-          </h1>
-          <p className="max-w-2xl text-lg text-pretty text-fg-muted">
-            Formsmith turns a plain-English description into a multi-step form with validation and
-            conditional logic. Refine it by hand or by asking the AI, publish a link, and watch
-            responses come in.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/sign-in" className={buttonClasses({ variant: "primary", size: "lg" })}>
-              Get started
-            </Link>
-            <Link href="/try" className={buttonClasses({ size: "lg" })}>
-              Try the editor
-            </Link>
-            <Link href="/f/demo" className={buttonClasses({ size: "lg", variant: "ghost" })}>
-              Try the demo form
-            </Link>
-          </div>
-          <p className="text-sm text-fg-muted">
-            No account needed for the editor or the demo.{" "}
-            <Link href="/demo" className="text-accent underline-offset-2 hover:underline">
-              See the demo&apos;s live results
-            </Link>
-            .
-          </p>
-        </section>
+        {/* Full-width wrapper: the background spans the page and is clipped to the hero. */}
+        <div className="relative isolate overflow-hidden">
+          <HeroBackground />
+          <section className="mx-auto flex w-full max-w-4xl flex-col items-center gap-6 px-4 pt-16 pb-12 text-center sm:pt-24">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-xs text-fg-muted">
+              <Icon name="sparkle" className="text-accent" /> AI writes the first draft. You stay in
+              control.
+            </span>
+            <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+              Describe a form. <span className="text-shine">Get a form.</span>
+            </h1>
+            <p className="max-w-2xl text-lg text-pretty text-fg-muted">
+              Formsmith turns a plain-English description into a multi-step form with validation and
+              conditional logic. Refine it by hand or by asking the AI, publish a link, and watch
+              responses come in.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link href="/sign-in" className={buttonClasses({ variant: "primary", size: "lg" })}>
+                Get started
+              </Link>
+              <Link href="/try" className={buttonClasses({ size: "lg" })}>
+                Try the editor
+              </Link>
+              <Link href="/f/demo" className={buttonClasses({ size: "lg", variant: "ghost" })}>
+                Try the demo form
+              </Link>
+            </div>
+            <p className="text-sm text-fg-muted">
+              No account needed for the editor or the demo.{" "}
+              <Link href="/demo" className="text-accent underline-offset-2 hover:underline">
+                See the demo&apos;s live results
+              </Link>
+              .
+            </p>
+            <div className="mt-8 w-full max-w-3xl">
+              <HeroDemo />
+            </div>
+          </section>
+        </div>
 
         <section aria-labelledby="features-heading" className="mx-auto w-full max-w-5xl px-4 pb-16">
           <h2 id="features-heading" className="sr-only">
@@ -56,14 +66,14 @@ export default function Home() {
           </h2>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
-              <li key={f.title}>
-                <Card className="flex h-full flex-col gap-2">
+              <li key={f.title} className="reveal">
+                <SpotlightCard className="flex h-full flex-col gap-2">
                   <span className="grid size-9 place-items-center rounded-control bg-accent-soft text-accent">
                     <Icon name={f.icon} />
                   </span>
                   <h3 className="font-semibold">{f.title}</h3>
                   <p className="text-sm text-fg-muted">{f.body}</p>
-                </Card>
+                </SpotlightCard>
               </li>
             ))}
           </ul>
@@ -71,7 +81,7 @@ export default function Home() {
 
         <section aria-labelledby="built-heading" className="border-t border-line bg-surface">
           <div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-14 md:grid-cols-[1fr_2fr]">
-            <div>
+            <div className="reveal">
               <h2 id="built-heading" className="text-xl font-semibold">
                 How it&apos;s built
               </h2>
@@ -82,7 +92,7 @@ export default function Home() {
             </div>
             <ul className="grid gap-3 text-sm sm:grid-cols-2">
               {BUILT.map(([title, body]) => (
-                <li key={title} className="rounded-control border border-line p-3">
+                <li key={title} className="reveal rounded-control border border-line p-3">
                   <p className="font-medium">{title}</p>
                   <p className="mt-1 text-fg-muted">{body}</p>
                 </li>
@@ -143,7 +153,7 @@ const BUILT: [string, string][] = [
     "Row Level Security and column grants on every table; the secret key is used in exactly one server path.",
   ],
   [
-    "Hand-built UI",
-    "No component, chart or animation libraries: native elements, our own accessible components, CSS motion.",
+    "Resilient AI",
+    "Drafts stream into a live preview, the core repairs the output before it's used, and an overloaded model fails over to a fallback in seconds.",
   ],
 ];

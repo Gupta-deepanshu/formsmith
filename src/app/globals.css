@@ -138,6 +138,153 @@
   animation: fs-highlight 1.8s ease-out both;
 }
 
+/*
+ * Marketing-page effects (landing hero, AI generate loader). These are decorative and longer
+ * than the 200 ms used for interface transitions, so each one: is purely ornamental (content
+ * is readable without it), runs once or only while something is actually loading, and has a
+ * plain fallback under reduced motion and Windows high-contrast (forced colours).
+ */
+
+/* Dot grid that fades out towards the edges. Used behind the landing hero. */
+@utility bg-dot-grid {
+  background-image: radial-gradient(circle at 11px 11px, var(--line-strong) 1px, transparent 0);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 70% 65% at 50% 40%, #000 25%, transparent 100%);
+}
+/*
+ * The interactive layer: the same grid (same tile size and dot centre, so the dots line up
+ * exactly) but larger accent dots, masked to a circle around the pointer AND the same edge
+ * fade (mask-composite: intersect). Net effect: dots near the cursor light up and swell.
+ */
+@utility bg-dot-grid-hot {
+  background-image: radial-gradient(circle at 11px 11px, var(--accent) 1.75px, transparent 0);
+  background-size: 22px 22px;
+  mask-image:
+    radial-gradient(ellipse 70% 65% at 50% 40%, #000 25%, transparent 100%),
+    radial-gradient(
+      170px circle at var(--dot-x, -999px) var(--dot-y, -999px),
+      #000,
+      transparent 75%
+    );
+  mask-composite: intersect;
+}
+
+/*
+ * Gradient text: a 300%-wide gradient clipped to the glyphs, moved from 100% to 0%, so the
+ * bright band starts and ends off the text. text-shine runs once (headline word);
+ * text-shimmer loops while the AI is working.
+ */
+@keyframes fs-sweep {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+/* Same keyframes under a second name: switching animation-name is what replays it on hover. */
+@keyframes fs-sweep-again {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+@utility text-shine {
+  /* Wide, bright band (35–65%) so the sweep reads clearly on a short phrase. */
+  background-image: linear-gradient(
+    100deg,
+    var(--accent) 35%,
+    color-mix(in oklch, var(--accent) 25%, white) 50%,
+    var(--accent) 65%
+  );
+  background-size: 300% 100%;
+  background-clip: text;
+  color: transparent;
+  /* Starts after the page has settled, so it isn't missed during load. */
+  animation: fs-sweep 1.6s ease-in-out 0.9s both;
+}
+/* Replay when the pointer is over the headline (pointer devices only). */
+@media (hover: hover) {
+  :where(h1):hover .text-shine {
+    animation: fs-sweep-again 1.2s ease-in-out both;
+  }
+}
+@utility text-shimmer {
+  background-image: linear-gradient(90deg, var(--fg-muted) 40%, var(--fg) 50%, var(--fg-muted) 60%);
+  background-size: 300% 100%;
+  background-clip: text;
+  color: transparent;
+  animation: fs-sweep 1.8s linear infinite;
+}
+
+/* Blinking caret for the hero's typing demo. */
+@keyframes fs-caret {
+  50% {
+    opacity: 0;
+  }
+}
+@utility animate-caret {
+  animation: fs-caret 1s steps(1) infinite;
+}
+
+/*
+ * Pointer spotlight for cards (position set as --spot-x/--spot-y by JS). Two layers:
+ * - spotlight: a faint fill. Kept very light in light mode, where a strong accent tint on
+ *   white reads as a stain rather than light; stronger in dark mode, where it reads as glow.
+ * - spotlight-border: the same radial gradient shown only in a 1px ring (content-box mask
+ *   excluded from the full box), so the card's edge lights up near the cursor.
+ */
+:root {
+  --spot-fill: color-mix(in oklch, var(--accent) 5%, transparent);
+  --spot-ring: color-mix(in oklch, var(--accent) 70%, transparent);
+}
+.dark {
+  --spot-fill: color-mix(in oklch, var(--accent) 12%, transparent);
+  --spot-ring: color-mix(in oklch, var(--accent) 80%, transparent);
+}
+@utility spotlight {
+  background: radial-gradient(
+    260px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    var(--spot-fill),
+    transparent 70%
+  );
+}
+@utility spotlight-border {
+  padding: 1px;
+  background: radial-gradient(
+    180px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    var(--spot-ring),
+    transparent 70%
+  );
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/*
+ * Scroll reveal with a CSS scroll-driven animation: no JS, no IntersectionObserver.
+ * Browsers without view() timelines (e.g. Firefox today) just show the content.
+ * Elements already on screen at load are past their entry range, so they appear as-is.
+ */
+@keyframes fs-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: fs-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 5% cover 30%;
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,
@@ -146,5 +293,19 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* A frozen shimmer would leave the text half-highlighted; show it plainly instead. */
+  .text-shimmer {
+    background: none;
+    color: var(--fg-muted);
+  }
+}
+
+/* High-contrast mode drops backgrounds, which would make clipped-gradient text invisible. */
+@media (forced-colors: active) {
+  .text-shine,
+  .text-shimmer {
+    background: none;
+    color: CanvasText;
   }
 }
